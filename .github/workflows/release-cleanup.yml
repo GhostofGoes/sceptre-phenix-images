@@ -15,6 +15,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
       - uses: wow-actions/delete-stale-releases@57c9c5dec2bef88926595ba78cb090c2f5449be2 # v1.3.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -44,6 +48,10 @@ jobs:
     permissions:
       packages: write
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
       - uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1
         with:
           older-than: 90 day
