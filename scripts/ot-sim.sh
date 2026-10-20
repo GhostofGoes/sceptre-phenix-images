@@ -60,6 +60,29 @@ echo "root:SiaSd3te" | chpasswd
 adduser sceptre --UID 1001 --gecos "" --shell /bin/bash --disabled-login || true
 echo "sceptre:sceptre" | chpasswd
 
+# Start the OT-sim CPU module at boot. The phenix ot-sim and wind-turbine apps
+# only inject /etc/ot-sim/config.xml; without this unit nothing runs it. The
+# condition keeps the service idle in VMs that were given no config. A module
+# that exits at once (a peer or broker not up yet) is retried every 5 s
+# without limit; systemd's defaults would give up after five tries in 1 s.
+cat > /etc/systemd/system/ot-sim.service <<EOF
+[Unit]
+Description=ot-sim CPU module
+ConditionFileNotEmpty=/etc/ot-sim/config.xml
+After=network.target phenix.service
+StartLimitIntervalSec=0
+
+[Service]
+ExecStart=/usr/local/bin/ot-sim-cpu-module /etc/ot-sim/config.xml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+mkdir -p /etc/systemd/system/multi-user.target.wants
+ln -sf /etc/systemd/system/ot-sim.service /etc/systemd/system/multi-user.target.wants/ot-sim.service
+
 #Ensure /etc is owned by root
 chown -R root:root /etc
 
