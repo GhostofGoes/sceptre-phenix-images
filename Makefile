@@ -1,6 +1,10 @@
 .PHONY: help check_clean bookworm kali kali-harmonie jammy noble bennu minirouter _minirouter_img docker-hello-world ntp vyos ubuntu-soaptools clean ot-sim lint install-dev update-actions
 
 .ONESHELL: # for heredoc and exit
+# With .ONESHELL a recipe is one shell script, so make only sees its last
+# command's status: stop at the first failing command, or a failed build or
+# miniccc injection followed by an echo would report success.
+.SHELLFLAGS := -ec
 
 # this addresses case of /phenix differing between host and container
 WORKDIR := $(PWD)
@@ -52,7 +56,7 @@ kali:
 kali-harmonie:
 	@$(CHECK_IMAGE)
 	@$(CHECK_TAR)
-	@$(PHENIX) image create -l main,non-free,contrib -r kali-rolling -v minbase -s 50G $(COMPRESS) $(@)
+	@$(PHENIX) image create -l main,non-free,contrib -r kali-rolling -v minbase -s 50G -T $(WORKDIR)/scripts/kali-harmonie.sh $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 
@@ -90,6 +94,7 @@ docker-hello-world:
 	@$(CHECK_TAR)
 	@$(PHENIX) image create -T $(WORKDIR)/scripts/atomic/docker.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
 
 # Build ot-sim.qc2          -- Ubuntu Focal, OTSim, Pandas, 
 ot-sim:
@@ -109,7 +114,6 @@ ntp:
 
 # Build vyos.qc2			-- VyOS 1.5
 vyos:
-	@set -e
 	@cd $(WORKDIR)/scripts/vyos/
 	@VYOSTMP=$(VYOSTMP) ./build-vyos.sh -m $(MINICCC)
 	@if command -v virt-sparsify >/dev/null 2>&1; then \
