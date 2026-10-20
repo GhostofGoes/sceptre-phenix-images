@@ -8,7 +8,10 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 
 apt-get install -y scapy python3-pip python3-all python3-dev python3-doc python3-venv python3-crcmod python3-wheel python3-setuptools pybind11-dev python3-pybind11 cmake gcc
-pip3 install helics pyopendnp3 python-dateutil elasticsearch~=7.17
+# Kali's python3 is externally managed (PEP 668), so pip needs explicit
+# permission to install into it. pyopendnp3 is not installed: its last release
+# (0.1.0) vendors a pybind11 that does not compile against Python 3.11 or newer.
+pip3 install --break-system-packages helics python-dateutil elasticsearch~=7.17
 
 apt-get install -y firefox-esr kali-desktop-xfce kali-linux-default tcpdump nmap wireshark jq kali-grant-root dos2unix zip unzip tree nano arping
 
