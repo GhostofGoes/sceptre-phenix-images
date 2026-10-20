@@ -45,6 +45,7 @@ jobs:
             minirouter,
             ubuntu-soaptools,
             ot-sim,
+            grafana,
             bennu-dev,
             caldera
           ]
@@ -187,6 +188,7 @@ jobs:
             minirouter,
             ubuntu-soaptools,
             ot-sim,
+            grafana,
             bennu-dev,
             caldera
           ]
