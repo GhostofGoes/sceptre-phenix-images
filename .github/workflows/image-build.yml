@@ -13,10 +13,22 @@ on:
   schedule:
     - cron: "11 11 * * WED"
 
+permissions:
+  contents: read
+
+# The event is part of the group: a newer waiting run replaces an older one in
+# its group, and the weekly scheduled run, which tags and releases the images,
+# must not be replaced by a push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # Job: Build images using the phenix image builder
   build-images:
     strategy:
+      # One broken recipe must not cancel the others.
+      fail-fast: false
       matrix:
         build:
           [
@@ -34,9 +46,10 @@ jobs:
             ot-sim,
             bennu-dev
           ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
     permissions:
-      contents: write
+      contents: read
       packages: write
     steps:
       # Checkout repository code
@@ -54,13 +67,12 @@ jobs:
           sudo apt update
           sudo apt install -y qemu-utils guestfs-tools
 
-      # Pull docker containers
+      # Pull the phenix container; compose pulls the minimega container it runs
+      # (ghcr.io/sandia-minimega/minimega:master) when it starts phenix.
       - name: pull docker containers
         run: |
           docker pull ghcr.io/sandialabs/sceptre-phenix/phenix:main
-          docker pull ghcr.io/sandialabs/sceptre-phenix/minimega:main
           docker tag ghcr.io/sandialabs/sceptre-phenix/phenix:main phenix:latest
-          docker tag ghcr.io/sandialabs/sceptre-phenix/minimega:main minimega:latest
 
       # Start docker containers
       - name: download docker-compose.yml
@@ -69,15 +81,53 @@ jobs:
         run: |
           sed -i 's/\.\/tmp/\/tmp/g' docker-compose.yml
           sed -i '\|/tmp/phenix|a\      - ${{ github.workspace }}:/${{ github.workspace }}\n    working_dir: ${{ github.workspace }}' docker-compose.yml
-          docker compose -f docker-compose.yml up -d phenix
-          echo "Waiting for services to start..."
-          sleep 5
+          # Wait for the phenix and minimega healthchecks rather than a fixed
+          # sleep; image builds and miniccc injection need both.
+          docker compose -f docker-compose.yml up -d --wait --wait-timeout 300 phenix
 
-      # Extract miniccc and minirouter binaries
-      - name: get miniccc and minirouter
+      # Build miniccc and minirouter statically from the minimega source the
+      # minimega container runs. The container's own binaries are linked
+      # against its glibc (2.35), so miniccc would not start in images with an
+      # older one, such as ot-sim (Ubuntu focal, 2.31).
+      - name: check out minimega
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: sandia-minimega/minimega
+          ref: master
+          path: minimega-src
+          persist-credentials: false
+      # go-version-file would install exactly the version of the go directive
+      # (go 1.24.0, with none of the standard library fixes since), and these
+      # tools go into every published image. Build with the newest patch
+      # release of that minor version instead.
+      - name: read minimega's Go version
+        id: go
+        env:
+          GO_MOD: minimega-src/go.mod
         run: |
-          docker cp minimega:/opt/minimega/bin/miniccc ${{ github.workspace }}
-          docker cp minimega:/opt/minimega/bin/minirouter ${{ github.workspace }}
+          set -euo pipefail
+          version=$(sed -n 's/^go \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p' "$GO_MOD")
+          if [ -z "$version" ]; then
+            echo "::error::$GO_MOD has no go directive"
+            exit 1
+          fi
+          echo "version=$version" | tee -a "$GITHUB_OUTPUT"
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ steps.go.outputs.version }}
+          cache-dependency-path: minimega-src/go.sum
+      - name: build miniccc and minirouter
+        working-directory: minimega-src
+        env:
+          GOFLAGS: -mod=vendor
+          CGO_ENABLED: '0'
+        run: |
+          # minimega's build scripts generate internal/version, which the
+          # repository does not track.
+          ./scripts/version.bash
+          go build -ldflags="-s -w" -o "$GITHUB_WORKSPACE/miniccc" ./cmd/miniccc
+          go build -ldflags="-s -w" -o "$GITHUB_WORKSPACE/minirouter" ./cmd/minirouter
+          rm -rf "$GITHUB_WORKSPACE/minimega-src"
 
       # Remove unneeded tools to make more build space
       - name: free disk space
@@ -99,6 +149,9 @@ jobs:
         run: |
           sudo modprobe nbd
           export VYOSTMP=/mnt/vyostmp
+          # public.ecr.aws rate-limits shared runner addresses; Microsoft's
+          # mirror of the Docker Hub library images does not.
+          export INJECT_BASE_IMAGE=mcr.microsoft.com/mirror/docker/library/ubuntu:24.04
           sudo -E make ${{ matrix.build }}
 
       # Publish the built image to GitHub Container Registry using oras
@@ -107,9 +160,12 @@ jobs:
         # or if manually triggered on a different branch so maintainers can manually push images
         if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || github.event_name == 'workflow_dispatch'
         shell: bash
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
         run: |  # zizmor: ignore[template-injection]
           REPO=${GITHUB_REPOSITORY,,}  # lowercase repo name for oras (capital letters not allowed in oras package names, some github usernames have capital letters)
-          oras login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
+          printf '%s' "$REGISTRY_TOKEN" | oras login -u "$REGISTRY_USER" --password-stdin ghcr.io
           oras push "ghcr.io/${REPO}/${{ matrix.build }}.qc2:${GITHUB_SHA:0:7}" ${{ matrix.build }}.qc2
           # tag with branch name
           oras tag "ghcr.io/${REPO}/${{ matrix.build }}.qc2:${GITHUB_SHA:0:7}" "${GITHUB_REF_SLUG}"
@@ -136,7 +192,8 @@ jobs:
     # Only run on main branch for scheduled or manual workflow_dispatch events
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     needs: build-images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     outputs:
       date: ${{ steps.date.outputs.date }}
     permissions:
@@ -151,10 +208,13 @@ jobs:
       - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
       # Tag images in the registry with 'latest' and date-based tags
       - name: tag images with date and latest
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
         run: |  # zizmor: ignore[template-injection]
           REPO=${GITHUB_REPOSITORY,,}  # lowercase repo name for oras (capital letters not allowed in oras package names, some github usernames have capital letters)
           oras version
-          oras login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
+          printf '%s' "$REGISTRY_TOKEN" | oras login -u "$REGISTRY_USER" --password-stdin ghcr.io
           oras tag ghcr.io/${REPO}/${{ matrix.build }}.qc2:${GITHUB_SHA:0:7} latest ${{ steps.date.outputs.date }}
 
   # Job: Create release successful build
@@ -162,7 +222,8 @@ jobs:
     # Only run on main branch for scheduled or manual workflow_dispatch events
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     needs: tag-images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
