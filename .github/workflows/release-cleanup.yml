@@ -62,7 +62,8 @@ jobs:
             minirouter,
             ubuntu-soaptools,
             ot-sim,
-            bennu-dev
+            bennu-dev,
+            caldera
           ]
     name: Delete Untagged Images
     runs-on: ubuntu-latest

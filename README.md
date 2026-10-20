@@ -185,6 +185,7 @@ the Makefile are shown below.
 | kali-harmonie | Kali / kali-rolling | Scapy, pybind11, HELICS, elasticsearch-py | Kali Linux image for the HARMONIE-SPS LDRD. | :white_check_mark: |
 | OT-Sim | Ubuntu / focal | OT-Sim, PandaPower, pyOpenDNP3, HELICS | Ubuntu image for OT-SIM and Panda Power projects | :x: |
 | bennu-dev | Ubuntu / jammy | Bennu, Brash, VS Code, xrdp, Remmina, GNOME Web, Wireshark, Nmap | A modified version of the bennu image used for developing and troubleshooting bennu mid-experiment | :white_check_mark: |
+| caldera | Ubuntu / noble | [MITRE Caldera](https://caldera.mitre.org) 5.3.0 with its plugins and Atomic Red Team abilities, the DNP3, Modbus, OT and phenix plugins, Firefox | Server for the phenix `caldera` app and SCORCH `caldera` component: `caldera.service` runs Caldera from the `conf/default.yml` the app injects and serves its UI and Sandcat agents on port 8888 | :white_check_mark: |
 
 ## Contributing
 
