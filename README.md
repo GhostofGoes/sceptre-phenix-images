@@ -178,6 +178,7 @@ the Makefile are shown below.
 | bennu | Ubuntu / jammy | Bennu, Brash | Official SCEPTRE image used for running bennu in experiments (includes brash shell) | :x: |
 | docker-hello-world | Ubuntu / jammy | Docker | Shows how you can run a service (dockerd) inside the chroot image build environment | :x: |
 | ntp | Ubuntu / jammy | [ntpd](https://linux.die.net/man/8/ntpd) | Network time protocol server | :x: |
+| e2e | Ubuntu / noble | ntpsec, socat, iperf3, hping3, ettercap, snort, WireGuard tools | Headless guest the phenix end-to-end tests boot | :x: |
 | vyos | VyOS / 1.5 | [VyOS](https://docs.vyos.io/en/latest/) | Open-source enterprise-grade router platform | :x: |
 | minirouter | Ubuntu / noble | miniccc/minirouter | Minimega-based router | :x: |
 | soaptools | Ubuntu / jammy | filebeat,zeek,msf | preconfigured image for the [soap-hil topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/soap-hil) | :white_check_mark:  |
