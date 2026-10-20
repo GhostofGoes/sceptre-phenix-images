@@ -58,6 +58,9 @@ PACKAGES="$PACKAGES man-db manpages-dev"
 
 # bennu build dependencies
 PACKAGES="$PACKAGES build-essential cmake g++ gcc libasio-dev libboost-date-time-dev libboost-filesystem-dev libboost-program-options-dev libboost-python-dev libboost-system-dev libboost-thread-dev libfreetype6-dev libssl-dev libzmq5-dev pkg-config"
+# bennu builds libzmq from source, which also needs libsodium (as bennu's own
+# Dockerfile installs it).
+PACKAGES="$PACKAGES libsodium-dev"
 
 # pybennu build dependencies
 PACKAGES="$PACKAGES git wget python3 python3-dev python3-pip liblapack-dev libboost-dev ninja-build pipx checkinstall zstd"
