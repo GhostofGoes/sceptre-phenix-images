@@ -44,6 +44,8 @@ jobs:
 
   cleanup-old-images:
     strategy:
+      # A package that has never been published fails its job; keep the others.
+      fail-fast: false
       matrix:
         build:
           [
