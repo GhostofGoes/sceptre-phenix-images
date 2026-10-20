@@ -57,6 +57,7 @@ jobs:
             bennu,
             docker-hello-world,
             ntp,
+            e2e,
             vyos,
             minirouter,
             ubuntu-soaptools,
