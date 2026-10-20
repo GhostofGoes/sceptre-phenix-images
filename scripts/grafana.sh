@@ -2,8 +2,9 @@
 # phenix image build script for the dashboard node of the wind turbine topology
 # (sceptre-phenix-topologies renewables/wind/turbine), which replaces that
 # topology's phenix-images/grafana.yml: Grafana and a single-node Elasticsearch
-# 8, both started at boot, and Loki. The topology injects Elasticsearch's config
-# (security off, listening on every address) and Grafana's anonymous access,
+# 8, both started at boot, and Loki. Elasticsearch runs as the topology
+# configures it (security off, listening on every address); the topology also
+# injects Grafana's anonymous access,
 # Elasticsearch datasource, dashboard provider and turbine dashboard; the OT-sim
 # ground-truth module writes to Elasticsearch on port 9200.
 
@@ -50,19 +51,48 @@ Components: main
 Architectures: amd64
 Signed-By: /etc/apt/keyrings/elastic.asc
 EOF
+# One file per pin: phenix drops blank lines from build scripts, which would
+# merge two stanzas of one file into a single record.
 cat > /etc/apt/preferences.d/grafana <<EOF
 Package: grafana
 Pin: version ${GRAFANA_MAJOR}.*
 Pin-Priority: 1001
-
+EOF
+cat > /etc/apt/preferences.d/loki <<EOF
 Package: loki
 Pin: version ${LOKI_MAJOR}.*
 Pin-Priority: 1001
 EOF
 
 apt-get update
-apt-get install -y grafana loki elasticsearch
+# Elasticsearch's package turns on TLS and authentication at install and prints
+# the elastic password it generates; keep that line out of the build log.
+status=0
+apt-get install -y grafana loki elasticsearch > /tmp/apt-install.log 2>&1 || status=$?
+sed '/generated password/d' /tmp/apt-install.log
+rm -f /tmp/apt-install.log
+test "$status" -eq 0
 test "$(dpkg-query -W -f '${Version}' grafana | cut -d. -f1)" = "$GRAFANA_MAJOR"
+test "$(dpkg-query -W -f '${Version}' loki | cut -d. -f1)" = "$LOKI_MAJOR"
+
+# Run Elasticsearch as the topology does, which injects this same config: a
+# single node with security off, over the TLS settings the package generated.
+cat > /etc/elasticsearch/elasticsearch.yml <<'EOF'
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
+discovery.type: single-node
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+xpack.security.http.ssl:
+  enabled: false
+  keystore.path: certs/http.p12
+xpack.security.transport.ssl:
+  enabled: false
+  verification_mode: certificate
+  keystore.path: certs/transport.p12
+  truststore.path: certs/transport.p12
+network.host: 0.0.0.0
+EOF
 
 # The topology's dashboard provider reads its dashboard from here.
 install -d -o grafana -g grafana -m 0755 /var/lib/grafana/dashboards
