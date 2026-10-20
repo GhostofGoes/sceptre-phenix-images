@@ -112,6 +112,14 @@ ntp:
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 
+# Build e2e.qc2			-- Ubuntu Noble, headless test guest for the phenix end-to-end tests
+e2e:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -P ntp,socat,isc-dhcp-client,iputils-ping,iproute2,procps,iperf3,hping3,ettercap-text-only,snort,python3,netcat-openbsd,wireguard-tools -T $(WORKDIR)/scripts/e2e.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
 # Build vyos.qc2			-- VyOS 1.5
 vyos:
 	@cd $(WORKDIR)/scripts/vyos/
