@@ -15,13 +15,18 @@ CWD=$(pwd)
 # used for miniccc injection step
 VYOSTMP=${VYOSTMP:-"$CWD/vyostmp/"}
 
+# base image of the miniccc injection container; the AWS public registry
+# avoids Docker Hub limits, but rate-limits shared CI runners, which can set a
+# registry mirror instead
+INJECT_BASE_IMAGE=${INJECT_BASE_IMAGE:-public.ecr.aws/lts/ubuntu:24.04}
+
 set -o pipefail # If using pipe in commands, fail for any non-exit 0
 set -o errexit # Exit immediately if a command exits with a non-zero status
 
 function docker_build() {
-    docker build -t inject-miniccc -f - . <<-'DONE'
-# use AWS public repo to avoid Docker Hub limits
-FROM public.ecr.aws/lts/ubuntu:24.04
+    docker build --build-arg "BASE_IMAGE=$INJECT_BASE_IMAGE" -t inject-miniccc -f - . <<-'DONE'
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 RUN apt update && apt install -y qemu-utils squashfs-tools
 COPY <<END inject.sh
 #!/usr/bin/env bash
