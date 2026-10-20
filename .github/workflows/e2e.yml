@@ -1,0 +1,98 @@
+# End-to-end test of the image recipes a change touches: phenix's E2E
+# workflow builds each affected recipe with this repository's Makefile and the
+# phenix image builder, boots the images in a phenix experiment on a real
+# minimega with KVM, and checks them from inside the guests.
+name: E2E
+
+on:
+  pull_request:
+    paths:
+      - 'Makefile'
+      - 'overlays/**'
+      - 'scripts/**'
+      - '.github/scripts/changed_recipes.py'
+      - '.github/workflows/e2e.yml'
+  push:
+    branches: ['main', 'ci-e2e-minimega']
+    paths:
+      - 'Makefile'
+      - 'overlays/**'
+      - 'scripts/**'
+      - '.github/scripts/changed_recipes.py'
+      - '.github/workflows/e2e.yml'
+  workflow_dispatch:
+    inputs:
+      images:
+        description: Recipes to build and test (space-separated); empty tests the recipes changed by the last commit
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+# Runs of different events test different things (the images repository's
+# push and dispatch runs pick different recipes), so they never share a group.
+# A newer push to a pull request cancels its running run; other runs finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    name: Find affected recipes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      images: ${{ steps.recipes.outputs.images }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Map changed files to recipes
+        id: recipes
+        env:
+          REQUESTED: ${{ inputs.images }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ -n "$REQUESTED" ]; then
+            images="$REQUESTED"
+          else
+            if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null \
+              || [ "$BASE" = 0000000000000000000000000000000000000000 ]; then
+              BASE=HEAD~1
+            fi
+            mapfile -t changed < <(git diff --name-only "$BASE" HEAD)
+            printf 'changed: %s\n' "${changed[@]}"
+            # A recipe is tested when anything it is built from (its Makefile
+            # block, the shared Makefile macros, its overlays and scripts)
+            # differs from the base.
+            images=$(python3 .github/scripts/changed_recipes.py --changed-since "$BASE")
+            # The workflow and the mapper themselves are tested on one small
+            # recipe when no recipe changed.
+            if [ -z "$images" ] && printf '%s\n' "${changed[@]}" | grep -q '^\.github/'; then
+              images=minirouter
+            fi
+          fi
+          echo "images: ${images:-none}"
+          echo "images=$images" >> "$GITHUB_OUTPUT"
+
+  e2e:
+    name: phenix E2E
+    needs: changes
+    if: needs.changes.outputs.images != ''
+    permissions:
+      contents: read
+    # First-party workflow, deliberately tracking phenix's branch so recipes
+    # are tested against the phenix they will be used with.
+    uses: GhostofGoes/sceptre-phenix/.github/workflows/e2e.yml@ci-e2e-minimega  # zizmor: ignore[unpinned-uses]
+    with:
+      phenix-repository: GhostofGoes/sceptre-phenix
+      phenix-ref: ci-e2e-minimega
+      images-repository: ${{ github.repository }}
+      images-ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      images: ${{ needs.changes.outputs.images }}
+      # Build and smoke test the changed recipes only; run no test shard.
+      shards: none
