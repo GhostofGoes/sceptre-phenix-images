@@ -45,6 +45,7 @@ jobs:
             e2e,
             vyos,
             minirouter,
+            protonuke,
             ubuntu-soaptools,
             ot-sim,
             grafana,
@@ -90,10 +91,10 @@ jobs:
           # sleep; image builds and miniccc injection need both.
           docker compose -f docker-compose.yml up -d --wait --wait-timeout 300 phenix
 
-      # Build miniccc and minirouter statically from the minimega source the
-      # minimega container runs. The container's own binaries are linked
-      # against its glibc (2.35), so miniccc would not start in images with an
-      # older one, such as ot-sim (Ubuntu focal, 2.31).
+      # Build miniccc, minirouter and protonuke statically from the minimega
+      # source the minimega container runs. The container's own binaries are
+      # linked against its glibc (2.35), so miniccc would not start in images
+      # with an older one, such as ot-sim (Ubuntu focal, 2.31).
       - name: check out minimega
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -121,7 +122,7 @@ jobs:
         with:
           go-version: ${{ steps.go.outputs.version }}
           cache-dependency-path: minimega-src/go.sum
-      - name: build miniccc and minirouter
+      - name: build miniccc, minirouter and protonuke
         working-directory: minimega-src
         env:
           GOFLAGS: -mod=vendor
@@ -132,6 +133,7 @@ jobs:
           ./scripts/version.bash
           go build -ldflags="-s -w" -o "$GITHUB_WORKSPACE/miniccc" ./cmd/miniccc
           go build -ldflags="-s -w" -o "$GITHUB_WORKSPACE/minirouter" ./cmd/minirouter
+          go build -ldflags="-s -w" -o "$GITHUB_WORKSPACE/protonuke" ./cmd/protonuke
           rm -rf "$GITHUB_WORKSPACE/minimega-src"
 
       # Remove unneeded tools to make more build space
@@ -193,6 +195,7 @@ jobs:
             e2e,
             vyos,
             minirouter,
+            protonuke,
             ubuntu-soaptools,
             ot-sim,
             grafana,
