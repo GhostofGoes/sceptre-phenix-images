@@ -1,4 +1,4 @@
-.PHONY: help check_clean bookworm kali kali-harmonie jammy noble bennu minirouter _minirouter_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana caldera lint install-dev update-actions
+.PHONY: help check_clean bookworm kali kali-harmonie jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana caldera lint install-dev update-actions
 
 .ONESHELL: # for heredoc and exit
 # With .ONESHELL a recipe is one shell script, so make only sees its last
@@ -75,6 +75,25 @@ noble:
 	@$(PHENIX) image create -r noble -v mingui $(UBUNTU_MIRROR) $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
+
+# Build ubuntu.qc2		-- Ubuntu Noble, headless, ubuntu user, security updates (helloworld topology)
+ubuntu:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -P ca-certificates,iputils-ping,less,nano,sudo -T $(WORKDIR)/scripts/atomic/ubuntu-user.sh,$(WORKDIR)/scripts/ubuntu.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build miniccc.qc2		-- Ubuntu Noble, headless, miniccc only, security updates (wind plant topologies)
+miniccc: _miniccc_img
+
+_miniccc_img: # use _img to avoid conflict with miniccc binary
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -T $(WORKDIR)/scripts/ubuntu.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+	@mv -f $(WORKDIR)/$(@).qc2 $(WORKDIR)/miniccc.qc2
 
 ##
 ## ------------------------------------- Experiment image builds --------------------------------------
