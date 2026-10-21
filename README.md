@@ -172,7 +172,7 @@ the Makefile are shown below.
 | **_Target_** | **_OS / Release_**  | **_Includes_** | **_Notes_** | **_GUI?_** |
 | ------------ | ------------------- | -------------- | ----------- | ---------- |
 | bookworm | Debian / bookworm | | | :white_check_mark: |
-| kali | Kali / kali-rolling | `kali-tools-top10` | | :white_check_mark: |
+| kali | Kali / kali-rolling | `kali-tools-top10` | A Firefox policy (`SkipTermsOfUse`) accepts Mozilla's Terms of Use. | :white_check_mark: |
 | jammy | Ubuntu / jammy | | | :white_check_mark: |
 | noble | Ubuntu / noble | | | :white_check_mark: |
 | ubuntu | Ubuntu / noble | `ubuntu` user with passwordless sudo, OpenSSH server, ping, nano, the `noble-updates` and `noble-security` pockets | Headless general-purpose guest of the [helloworld topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/helloworld), upgraded from those pockets at build | :x: |
