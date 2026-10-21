@@ -126,6 +126,8 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ steps.go.outputs.version }}
+          # Without it, setup-go takes any cached patch of this minor version.
+          check-latest: true
           cache-dependency-path: minimega-src/go.sum
       - name: build miniccc, minirouter and protonuke
         working-directory: minimega-src
