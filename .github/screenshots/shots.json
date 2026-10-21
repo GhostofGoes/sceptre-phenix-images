@@ -1,0 +1,440 @@
+{
+  "e2e": {
+    "vcpus": 1,
+    "memory": 1024,
+    "settle": 10,
+    "versions": [
+      "iperf3 --version | head -1",
+      "hping3 --version 2>&1 | head -1",
+      "snort -V 2>&1 | grep -o -m1 'Version [^ ]*'",
+      "wg --version",
+      "python3 --version"
+    ],
+    "shots": [
+      {
+        "title": "The booted guest",
+        "kind": "console",
+        "clear": false,
+        "commands": [
+          "hostnamectl | grep -E 'Static hostname|Operating System|Kernel'",
+          "systemctl is-system-running",
+          "ip -br addr show eth0",
+          "df -h / | tail -1",
+          "systemctl list-units --type=service --state=running --no-legend --plain | awk '{print $1}' | xargs | fold -s -w 120"
+        ]
+      },
+      {
+        "title": "The network test tools",
+        "kind": "console",
+        "commands": [
+          "iperf3 --version | head -1",
+          "hping3 --version 2>&1 | head -1",
+          "snort -V 2>&1 | grep -o -m1 'Version [^ ]*'",
+          "wg --version",
+          "socat -V | grep -m1 'socat version'",
+          "ettercap -v 2>&1 | grep -m1 -i 'ettercap [0-9]'",
+          "nc -h 2>&1 | head -1",
+          "python3 --version"
+        ]
+      },
+      {
+        "title": "phenix startup and miniccc",
+        "kind": "console",
+        "commands": [
+          "systemctl status --no-pager --lines=3 phenix.service miniccc.service",
+          "ls /etc/phenix/startup"
+        ]
+      }
+    ]
+  },
+  "caldera": {
+    "vcpus": 2,
+    "memory": 4096,
+    "gui": true,
+    "settle": 30,
+    "versions": [
+      "cd /opt/caldera && git describe --tags 2>/dev/null || cat /opt/caldera/VERSION.txt 2>/dev/null",
+      "firefox --version",
+      "/opt/caldera/venv/bin/python --version"
+    ],
+    "shots": [
+      {
+        "title": "Caldera in Firefox on the desktop",
+        "kind": "screen",
+        "wait": "pgrep -x xfdesktop >/dev/null && curl -fs -o /dev/null --max-time 5 http://localhost:8888/ && echo up",
+        "prep": "export DISPLAY=:0; for a in /root/.Xauthority /var/run/lightdm/root/:0; do [ -f \"$a\" ] && export XAUTHORITY=\"$a\" && break; done; nohup setsid firefox --new-window http://localhost:8888/ >/dev/null 2>&1 & sleep 40; echo opened"
+      },
+      {
+        "title": "Caldera sign-in page",
+        "kind": "browser",
+        "url": "http://10.77.0.10:8888/",
+        "wait": 240
+      },
+      {
+        "title": "The Caldera service",
+        "kind": "console",
+        "commands": [
+          "systemctl status --no-pager --lines=6 caldera.service",
+          "ls /opt/caldera/plugins | xargs",
+          "firefox --version"
+        ]
+      }
+    ]
+  },
+  "grafana": {
+    "vcpus": 2,
+    "memory": 4096,
+    "settle": 60,
+    "versions": [
+      "dpkg-query -W -f '${Package} ${Version}\\n' grafana loki elasticsearch"
+    ],
+    "shots": [
+      {
+        "title": "The booted guest",
+        "kind": "console",
+        "clear": false,
+        "commands": [
+          "hostnamectl | grep -E 'Static hostname|Operating System|Kernel'",
+          "systemctl is-system-running",
+          "ip -br addr show eth0",
+          "df -h / | tail -1",
+          "systemctl list-units --type=service --state=running --no-legend --plain | awk '{print $1}' | xargs | fold -s -w 120"
+        ]
+      },
+      {
+        "title": "Grafana sign-in page",
+        "kind": "browser",
+        "url": "http://10.77.0.10:3000/login",
+        "wait": 240
+      },
+      {
+        "title": "Grafana, Loki and Elasticsearch",
+        "kind": "console",
+        "commands": [
+          "dpkg-query -W -f '${Package} ${Version}\\n' grafana loki elasticsearch",
+          "systemctl is-enabled grafana-server elasticsearch loki",
+          "curl -s localhost:3000/api/health",
+          "curl -s localhost:9200 | head -18"
+        ]
+      }
+    ]
+  },
+  "ubuntu": {
+    "vcpus": 1,
+    "memory": 1024,
+    "settle": 10,
+    "versions": [
+      "dpkg-query -W -f '${Package} ${Version}\\n' openssh-server sudo"
+    ],
+    "shots": [
+      {
+        "title": "The booted guest",
+        "kind": "console",
+        "clear": false,
+        "commands": [
+          "hostnamectl | grep -E 'Static hostname|Operating System|Kernel'",
+          "systemctl is-system-running",
+          "ip -br addr show eth0",
+          "df -h / | tail -1",
+          "systemctl list-units --type=service --state=running --no-legend --plain | awk '{print $1}' | xargs | fold -s -w 120"
+        ]
+      },
+      {
+        "title": "The system and its ubuntu user",
+        "kind": "console",
+        "commands": [
+          ". /etc/os-release && echo \"$PRETTY_NAME\"",
+          "uname -r",
+          "id ubuntu",
+          "sudo -l -U ubuntu | tail -2",
+          "systemctl is-enabled ssh"
+        ]
+      },
+      {
+        "title": "APT sources with updates and security pockets",
+        "kind": "console",
+        "commands": [
+          "cat /etc/apt/sources.list.d/ubuntu.sources",
+          "apt-cache policy | grep -o 'noble[a-z-]*/[a-z]*' | sort -u | xargs"
+        ]
+      }
+    ]
+  },
+  "miniccc": {
+    "vcpus": 1,
+    "memory": 512,
+    "settle": 10,
+    "versions": [
+      "miniccc -version 2>&1 | head -1"
+    ],
+    "shots": [
+      {
+        "title": "The booted guest",
+        "kind": "console",
+        "clear": false,
+        "commands": [
+          "hostnamectl | grep -E 'Static hostname|Operating System|Kernel'",
+          "systemctl is-system-running",
+          "ip -br addr show eth0",
+          "df -h / | tail -1",
+          "systemctl list-units --type=service --state=running --no-legend --plain | awk '{print $1}' | xargs | fold -s -w 120"
+        ]
+      },
+      {
+        "title": "The miniccc agent",
+        "kind": "console",
+        "commands": [
+          "systemctl status --no-pager --lines=4 miniccc.service",
+          "ls -l \"$(command -v miniccc)\"",
+          "ldd \"$(command -v miniccc)\" 2>&1 | head -1"
+        ]
+      },
+      {
+        "title": "phenix startup",
+        "kind": "console",
+        "commands": [
+          "systemctl status --no-pager --lines=8 phenix.service",
+          "ls -l /etc/phenix/startup"
+        ]
+      }
+    ]
+  },
+  "protonuke": {
+    "vcpus": 1,
+    "memory": 512,
+    "settle": 10,
+    "versions": [
+      "protonuke -version 2>&1 | head -1"
+    ],
+    "shots": [
+      {
+        "title": "The booted guest",
+        "kind": "console",
+        "clear": false,
+        "commands": [
+          "hostnamectl | grep -E 'Static hostname|Operating System|Kernel'",
+          "systemctl is-system-running",
+          "ip -br addr show eth0",
+          "df -h / | tail -1",
+          "systemctl list-units --type=service --state=running --no-legend --plain | awk '{print $1}' | xargs | fold -s -w 120"
+        ]
+      },
+      {
+        "title": "The protonuke binary and unit",
+        "kind": "console",
+        "commands": [
+          "ls -l /usr/local/bin/protonuke",
+          "systemctl is-enabled protonuke.service",
+          "systemctl cat --no-pager protonuke.service | grep -v '^$' | head -22",
+          "systemctl status --no-pager --lines=0 protonuke.service | head -4"
+        ]
+      },
+      {
+        "title": "protonuke serving HTTP, as the protonuke app configures it",
+        "kind": "browser",
+        "url": "http://10.77.0.10/",
+        "wait": 90,
+        "prep": "printf 'PROTONUKE_ARGS = -http -serve\\n' > /etc/default/protonuke && systemctl restart protonuke.service"
+      }
+    ]
+  },
+  "wireguard": {
+    "vcpus": 1,
+    "memory": 512,
+    "settle": 10,
+    "versions": [
+      "dpkg-query -W -f '${Package} ${Version}\\n' wireguard-tools wazuh-agent"
+    ],
+    "shots": [
+      {
+        "title": "The booted guest",
+        "kind": "console",
+        "clear": false,
+        "commands": [
+          "hostnamectl | grep -E 'Static hostname|Operating System|Kernel'",
+          "systemctl is-system-running",
+          "ip -br addr show eth0",
+          "df -h / | tail -1",
+          "systemctl list-units --type=service --state=running --no-legend --plain | awk '{print $1}' | xargs | fold -s -w 120"
+        ]
+      },
+      {
+        "title": "A WireGuard interface",
+        "kind": "console",
+        "commands": [
+          "ip link add wg0 type wireguard",
+          "wg genkey > /tmp/wg.key && wg set wg0 private-key /tmp/wg.key listen-port 51820",
+          "ip addr add 10.222.222.1/24 dev wg0 && ip link set wg0 up",
+          "wg show wg0",
+          "ip -br addr show wg0"
+        ]
+      },
+      {
+        "title": "IP forwarding and the Wazuh agent",
+        "kind": "console",
+        "commands": [
+          "sysctl net.ipv4.ip_forward",
+          "dpkg-query -W -f '${Package} ${Version}\\n' wireguard-tools wazuh-agent",
+          "systemctl is-enabled wazuh-agent",
+          "tcpdump --version | head -1"
+        ]
+      }
+    ]
+  },
+  "zeek": {
+    "vcpus": 2,
+    "memory": 2048,
+    "settle": 20,
+    "versions": [
+      "/opt/zeek/bin/zeek --version",
+      "filebeat version",
+      "ovs-vsctl --version | head -1"
+    ],
+    "shots": [
+      {
+        "title": "The booted guest",
+        "kind": "console",
+        "clear": false,
+        "commands": [
+          "hostnamectl | grep -E 'Static hostname|Operating System|Kernel'",
+          "systemctl is-system-running",
+          "ip -br addr show eth0",
+          "df -h / | tail -1",
+          "systemctl list-units --type=service --state=running --no-legend --plain | awk '{print $1}' | xargs | fold -s -w 120"
+        ]
+      },
+      {
+        "title": "Zeek and zeekctl",
+        "kind": "console",
+        "commands": [
+          "/opt/zeek/bin/zeek --version",
+          "grep -vE '^\\s*(#|$)' /opt/zeek/etc/node.cfg",
+          "/opt/zeek/bin/zeekctl config | grep -E '^(zeekbase|logdir|spooldir) '",
+          "ovs-vsctl --version | head -1"
+        ]
+      },
+      {
+        "title": "Filebeat and its Zeek module",
+        "kind": "console",
+        "commands": [
+          "filebeat version",
+          "filebeat modules list | head -14",
+          "systemctl is-enabled filebeat"
+        ]
+      }
+    ]
+  },
+  "wazuh-manager": {
+    "vcpus": 2,
+    "memory": 3072,
+    "settle": 90,
+    "versions": [
+      "dpkg-query -W -f '${Package} ${Version}\\n' wazuh-manager elasticsearch filebeat"
+    ],
+    "shots": [
+      {
+        "title": "The booted guest",
+        "kind": "console",
+        "clear": false,
+        "commands": [
+          "hostnamectl | grep -E 'Static hostname|Operating System|Kernel'",
+          "systemctl is-system-running",
+          "ip -br addr show eth0",
+          "df -h / | tail -1",
+          "systemctl list-units --type=service --state=running --no-legend --plain | awk '{print $1}' | xargs | fold -s -w 120"
+        ]
+      },
+      {
+        "title": "The Wazuh manager",
+        "kind": "console",
+        "commands": [
+          "/var/ossec/bin/wazuh-control info",
+          "/var/ossec/bin/wazuh-control status | head -14",
+          "grep -A2 '<indexer>' /var/ossec/etc/ossec.conf | head -3"
+        ]
+      },
+      {
+        "title": "Wazuh alerts in Elasticsearch",
+        "kind": "browser",
+        "url": "http://10.77.0.10:9200/_cat/indices?v&s=index&h=health,status,index,docs.count",
+        "wait": 300,
+        "ready": "wazuh-alerts"
+      }
+    ]
+  },
+  "elasticsearch": {
+    "vcpus": 4,
+    "memory": 4096,
+    "gui": true,
+    "settle": 60,
+    "versions": [
+      "dpkg-query -W -f '${Package} ${Version}\\n' elasticsearch kibana",
+      "firefox --version"
+    ],
+    "shots": [
+      {
+        "title": "Kibana in Firefox on the desktop",
+        "kind": "screen",
+        "wait": "pgrep -x xfdesktop >/dev/null && curl -fs -o /dev/null --max-time 5 http://localhost:5601/api/status && echo up",
+        "prep": "pkill -x firefox; sleep 3; export DISPLAY=:0; for a in /root/.Xauthority /var/run/lightdm/root/:0; do [ -f \"$a\" ] && export XAUTHORITY=\"$a\" && break; done; nohup setsid firefox --new-window http://localhost:5601/app/home >/dev/null 2>&1 & sleep 40; echo opened"
+      },
+      {
+        "title": "Packetbeat dashboards loaded into Kibana",
+        "kind": "browser",
+        "url": "http://10.77.0.10:5601/app/dashboards#/list",
+        "wait": 900,
+        "ready": "kbn",
+        "prep": "timeout 600 sh -c 'until curl -fs --max-time 5 http://localhost:5601/api/data_views | grep -q packetbeat; do sleep 10; done'; echo ready"
+      },
+      {
+        "title": "Elasticsearch and soh's flow query",
+        "kind": "console",
+        "commands": [
+          "curl -s localhost:9200 | head -16",
+          "systemctl is-enabled elasticsearch kibana",
+          "command -v query-flows.sh && query-flows.sh | head -c 300; echo"
+        ]
+      }
+    ]
+  },
+  "packetbeat": {
+    "vcpus": 1,
+    "memory": 1024,
+    "nics": 2,
+    "settle": 15,
+    "versions": [
+      "packetbeat version"
+    ],
+    "shots": [
+      {
+        "title": "The booted guest",
+        "kind": "console",
+        "clear": false,
+        "commands": [
+          "hostnamectl | grep -E 'Static hostname|Operating System|Kernel'",
+          "systemctl is-system-running",
+          "ip -br addr show eth0",
+          "df -h / | tail -1",
+          "systemctl list-units --type=service --state=running --no-legend --plain | awk '{print $1}' | xargs | fold -s -w 120"
+        ]
+      },
+      {
+        "title": "Packetbeat and the capture devices",
+        "kind": "console",
+        "commands": [
+          "packetbeat version",
+          "systemctl is-enabled packetbeat",
+          "packetbeat devices"
+        ]
+      },
+      {
+        "title": "Its configuration",
+        "kind": "console",
+        "commands": [
+          "packetbeat test config -c /etc/packetbeat/packetbeat.yml",
+          "grep -vE '^\\s*(#|$)' /etc/packetbeat/packetbeat.yml | head -32"
+        ]
+      }
+    ]
+  }
+}

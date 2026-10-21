@@ -1,0 +1,131 @@
+# Builds each recipe in .github/screenshots/shots.json, boots it under phenix
+# and minimega with KVM, and saves three screenshots and the booted image's
+# facts (OS, packages, services, ports, versions) as an artifact per recipe.
+name: Recipe screenshots
+
+on:
+  push:
+    branches: ['docs-recipe-screenshots']
+  workflow_dispatch:
+    inputs:
+      recipes:
+        description: Recipes to shoot (space-separated keys of shots.json; empty shoots all)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: recipe-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHENIX_REPOSITORY: GhostofGoes/sceptre-phenix
+  PHENIX_REF: ci-e2e-minimega
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      recipes: ${{ steps.plan.outputs.recipes }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select the recipes
+        id: plan
+        env:
+          WANT: ${{ inputs.recipes }}
+        run: |
+          python3 - <<'EOF'
+          import json, os
+          spec = json.load(open(".github/screenshots/shots.json"))
+          want = os.environ.get("WANT", "").split()
+          unknown = [r for r in want if r not in spec]
+          if unknown:
+              raise SystemExit(f"unknown recipes: {unknown}")
+          if not want:
+              # Every recipe in shots.json that this branch's Makefile builds.
+              targets = {line.split(":")[0] for line in open("Makefile") if line[:1].isalnum() and ":" in line}
+              want = [r for r in spec if r in targets]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"recipes={json.dumps(want)}\n")
+          print(want)
+          EOF
+
+  shots:
+    name: Shots ${{ matrix.recipe }}
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        recipe: ${{ fromJSON(needs.plan.outputs.recipes) }}
+    steps:
+      - name: Check out the image recipes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: images
+          persist-credentials: false
+
+      - name: Check out phenix
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.PHENIX_REPOSITORY }}
+          ref: ${{ env.PHENIX_REF }}
+          path: phenix
+          persist-credentials: false
+
+      - name: Set up phenix and minimega, and the image builder
+        uses: ./phenix/.github/actions/e2e-setup
+        with:
+          image-builder: 'true'
+
+      - name: Free disk space for the build
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup || true
+          df -h / /mnt
+
+      - name: Build ${{ matrix.recipe }} with the images Makefile
+        working-directory: images
+        env:
+          IMAGE: ${{ matrix.recipe }}
+        run: |
+          set -euo pipefail
+          cp /usr/local/bin/miniccc /usr/local/bin/minirouter /usr/local/bin/protonuke .
+          start=$(date +%s)
+          make "$IMAGE" PHENIX="sudo /usr/local/bin/phenix --store.endpoint bolt:///etc/phenix/store.bdb"
+          echo "built $IMAGE in $(( $(date +%s) - start )) s"
+          sudo mv "$IMAGE.qc2" /phenix/images/
+          qemu-img info "/phenix/images/$IMAGE.qc2"
+
+      - name: Boot it and take the screenshots
+        env:
+          RECIPE: ${{ matrix.recipe }}
+        # exec: the runner signals only the step's shell on a cancel.
+        run: exec sudo -E python3 images/.github/screenshots/run_screenshots.py "$RECIPE" images/.github/screenshots/shots.json "$RUNNER_TEMP/shots/$RECIPE"
+
+      - name: Collect logs
+        if: always()
+        env:
+          RECIPE: ${{ matrix.recipe }}
+        run: |
+          D="$RUNNER_TEMP/shots/$RECIPE"
+          sudo mkdir -p "$D/logs"
+          sudo cp /tmp/minimega/minimega.log "$D/logs/" 2>/dev/null || true
+          sudo cp -r /var/log/phenix "$D/logs/phenix" 2>/dev/null || true
+          sudo chown -R "$(id -u):$(id -g)" "$RUNNER_TEMP/shots"
+
+      - name: Upload the screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: shots-${{ matrix.recipe }}
+          path: ${{ runner.temp }}/shots/${{ matrix.recipe }}
+          retention-days: 14
+          if-no-files-found: ignore
