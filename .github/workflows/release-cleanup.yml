@@ -54,6 +54,8 @@ jobs:
             kali-harmonie,
             jammy,
             noble,
+            ubuntu,
+            miniccc,
             bennu,
             docker-hello-world,
             ntp,

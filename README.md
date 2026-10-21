@@ -170,6 +170,8 @@ the Makefile are shown below.
 | kali | Kali / kali-rolling | `kali-tools-top10` | | :white_check_mark: |
 | jammy | Ubuntu / jammy | | | :white_check_mark: |
 | noble | Ubuntu / noble | | | :white_check_mark: |
+| ubuntu | Ubuntu / noble | `ubuntu` user with passwordless sudo, OpenSSH server, ping, nano, the `noble-updates` and `noble-security` pockets | Headless general-purpose guest of the [helloworld topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/helloworld), upgraded from those pockets at build | :x: |
+| miniccc | Ubuntu / noble | the `noble-updates` and `noble-security` pockets | Headless guest that only runs miniccc, upgraded like `ubuntu`, for the placeholder `soar` node of the `soar` topology of the [wind plant](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/renewables/wind/plant) | :x: |
 
 ## Experiment Linux Images
 
