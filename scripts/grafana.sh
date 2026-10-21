@@ -14,10 +14,12 @@ export LC_ALL=C
 export DEBIAN_FRONTEND=noninteractive
 
 # The turbine dashboard uses canvas panels (Grafana 10 or later) and its
-# datasource targets Elasticsearch 8, from the 8.x repository below. The major
-# versions are pinned so a weekly rebuild cannot move to an untested one.
+# datasource targets Elasticsearch 8, from the 8.x repository below. Grafana's
+# and Loki's major versions are pinned, and Elasticsearch to the release the
+# other Elastic recipes use, so a weekly rebuild cannot move to an untested one.
 GRAFANA_MAJOR=12
 LOKI_MAJOR=3
+ELASTIC_VERSION=8.19.23
 # The repositories' signing keys, as Grafana Labs and Elastic publish them.
 GRAFANA_KEY_FINGERPRINT=B53AE77BADB630A683046005963FA27710458545
 ELASTIC_KEY_FINGERPRINT=46095ACC8548582C1A2699A9D27D666CD88E42B4
@@ -63,6 +65,11 @@ Package: loki
 Pin: version ${LOKI_MAJOR}.*
 Pin-Priority: 1001
 EOF
+cat > /etc/apt/preferences.d/elasticsearch <<EOF
+Package: elasticsearch
+Pin: version ${ELASTIC_VERSION}
+Pin-Priority: 1001
+EOF
 
 apt-get update
 # Elasticsearch's package turns on TLS and authentication at install and prints
@@ -74,6 +81,7 @@ rm -f /tmp/apt-install.log
 test "$status" -eq 0
 test "$(dpkg-query -W -f '${Version}' grafana | cut -d. -f1)" = "$GRAFANA_MAJOR"
 test "$(dpkg-query -W -f '${Version}' loki | cut -d. -f1)" = "$LOKI_MAJOR"
+test "$(dpkg-query -W -f '${Version}' elasticsearch)" = "$ELASTIC_VERSION"
 
 # Run Elasticsearch as the topology does, which injects this same config: a
 # single node with security off, over the TLS settings the package generated.
