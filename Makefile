@@ -1,6 +1,10 @@
-.PHONY: help check_clean bookworm kali kali-harmonie jammy noble bennu minirouter _minirouter_img docker-hello-world ntp vyos ubuntu-soaptools clean ot-sim lint install-dev update-actions
+.PHONY: help check_clean bookworm kali kali-harmonie jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana wireguard zeek wazuh-manager elasticsearch packetbeat caldera lint install-dev update-actions
 
 .ONESHELL: # for heredoc and exit
+# With .ONESHELL a recipe is one shell script, so make only sees its last
+# command's status: stop at the first failing command, or a failed build or
+# miniccc injection followed by an echo would report success.
+.SHELLFLAGS := -ec
 
 # this addresses case of /phenix differing between host and container
 WORKDIR := $(PWD)
@@ -44,7 +48,7 @@ bookworm:
 kali:
 	@$(CHECK_IMAGE)
 	@$(CHECK_TAR)
-	@$(PHENIX) image create -P kali-tools-top10 -r kali-rolling -v mingui -s 80G $(COMPRESS) $(@)
+	@$(PHENIX) image create -P kali-tools-top10 -r kali-rolling -v mingui -s 80G -T $(WORKDIR)/scripts/kali.sh $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 
@@ -52,7 +56,7 @@ kali:
 kali-harmonie:
 	@$(CHECK_IMAGE)
 	@$(CHECK_TAR)
-	@$(PHENIX) image create -l main,non-free,contrib -r kali-rolling -v minbase -s 50G $(COMPRESS) $(@)
+	@$(PHENIX) image create -l main,non-free,contrib -r kali-rolling -v minbase -s 50G -T $(WORKDIR)/scripts/kali-harmonie.sh $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 
@@ -72,6 +76,25 @@ noble:
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 
+# Build ubuntu.qc2		-- Ubuntu Noble, headless, ubuntu user, security updates (helloworld topology)
+ubuntu:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -P ca-certificates,iputils-ping,less,nano,sudo -T $(WORKDIR)/scripts/atomic/ubuntu-user.sh,$(WORKDIR)/scripts/ubuntu.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build miniccc.qc2		-- Ubuntu Noble, headless, miniccc only, security updates (wind plant topologies)
+miniccc: _miniccc_img
+
+_miniccc_img: # use _img to avoid conflict with miniccc binary
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -T $(WORKDIR)/scripts/ubuntu.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+	@mv -f $(WORKDIR)/$(@).qc2 $(WORKDIR)/miniccc.qc2
+
 ##
 ## ------------------------------------- Experiment image builds --------------------------------------
 ##
@@ -90,12 +113,61 @@ docker-hello-world:
 	@$(CHECK_TAR)
 	@$(PHENIX) image create -T $(WORKDIR)/scripts/atomic/docker.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
 
 # Build ot-sim.qc2          -- Ubuntu Focal, OTSim, Pandas, 
 ot-sim:
 	@$(CHECK_IMAGE)
 	@$(CHECK_TAR)
 	@$(PHENIX) image create -r focal -T $(WORKDIR)/scripts/ot-sim.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build grafana.qc2		-- Ubuntu Noble, Grafana, Loki, Elasticsearch 8 (wind turbine dashboard node)
+grafana:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -s 50G -P gpg -T $(WORKDIR)/scripts/grafana.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build wireguard.qc2		-- Ubuntu Noble, WireGuard tools, Wazuh agent 4.14.9 (wind plant VPN nodes)
+wireguard:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -P wireguard-tools,iproute2,iputils-ping,tcpdump,gpg -T $(WORKDIR)/scripts/wireguard.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build zeek.qc2		-- Ubuntu Noble, Zeek LTS, Filebeat 8, Open vSwitch (wind plant ids node)
+zeek:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -s 20G -P gpg,openvswitch-switch -T $(WORKDIR)/scripts/zeek.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build wazuh-manager.qc2	-- Ubuntu Noble, Wazuh manager 4.14, Elasticsearch 8, Filebeat 8 (wind plant manager node)
+wazuh-manager:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -s 20G -P gpg,jq -T $(WORKDIR)/scripts/wazuh-manager.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build elasticsearch.qc2	-- Ubuntu Noble, Elasticsearch 8.19.23, Kibana 8.19.23, Firefox, GUI (soh packet capture server)
+elasticsearch:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -v mingui -s 25G -P gpg -T $(WORKDIR)/scripts/elasticsearch.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build packetbeat.qc2		-- Ubuntu Noble, Packetbeat 8.19.23 (soh packet capture monitor)
+packetbeat:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -P gpg -T $(WORKDIR)/scripts/packetbeat.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 
@@ -107,9 +179,16 @@ ntp:
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 
+# Build e2e.qc2			-- Ubuntu Noble, headless test guest for the phenix end-to-end tests
+e2e:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -P ntp,socat,isc-dhcp-client,iputils-ping,iproute2,procps,iperf3,hping3,ettercap-text-only,snort,python3,netcat-openbsd,wireguard-tools -T $(WORKDIR)/scripts/e2e.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
 # Build vyos.qc2			-- VyOS 1.5
 vyos:
-	@set -e
 	@cd $(WORKDIR)/scripts/vyos/
 	@VYOSTMP=$(VYOSTMP) ./build-vyos.sh -m $(MINICCC)
 	@if command -v virt-sparsify >/dev/null 2>&1; then \
@@ -132,6 +211,19 @@ _minirouter_img: # use _img to avoid conflict with minirouter binary
 	if test -f $(WORKDIR)/$(@).qc2; then $(PHENIX) image inject-miniexe $(WORKDIR)/minirouter $(WORKDIR)/$(@).qc2; echo "----- Injected minirouter into $(@).qc2 -----"; fi
 	@mv -f $(WORKDIR)/$(@).qc2 $(WORKDIR)/minirouter.qc2
 
+# Build protonuke.qc2		-- Ubuntu Noble, minimega protonuke traffic generator (wind plant topologies)
+protonuke: _protonuke_img
+
+_protonuke_img: # use _img to avoid conflict with protonuke binary
+	@if [ ! -f $(WORKDIR)/protonuke ]; then echo "\n\tprotonuke binary not found: '$(WORKDIR)/protonuke' -- build minimega's cmd/protonuke statically and put it there first\n"; exit 1; fi
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -T $(WORKDIR)/scripts/protonuke.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+	@if test -f $(WORKDIR)/$(@).qc2; then $(PHENIX) image inject-miniexe $(WORKDIR)/protonuke $(WORKDIR)/$(@).qc2; echo "----- Injected protonuke into $(@).qc2 -----"; fi
+	@mv -f $(WORKDIR)/$(@).qc2 $(WORKDIR)/protonuke.qc2
+
 # Build ubuntu-soaptools.qc2	-- Ubuntu Jammy, soaptools
 ubuntu-soaptools:
 	@$(CHECK_IMAGE)
@@ -145,6 +237,14 @@ bennu-dev:
 	@$(CHECK_IMAGE)
 	@$(CHECK_TAR)
 	@$(PHENIX) image create --size 32G -r jammy -v mingui -O $(WORKDIR)/overlays/bennu-dev,$(WORKDIR)/overlays/bennu,$(WORKDIR)/overlays/brash -T $(WORKDIR)/scripts/bennu-dev.sh $(BENNU_DIR) $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build caldera.qc2		-- Ubuntu Noble, MITRE Caldera server, Firefox, GUI
+caldera:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -v mingui -s 20G -P git,gpg,python3-venv -T $(WORKDIR)/scripts/caldera.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 

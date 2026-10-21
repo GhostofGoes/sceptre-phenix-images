@@ -15,13 +15,18 @@ CWD=$(pwd)
 # used for miniccc injection step
 VYOSTMP=${VYOSTMP:-"$CWD/vyostmp/"}
 
+# base image of the miniccc injection container; the AWS public registry
+# avoids Docker Hub limits, but rate-limits shared CI runners, which can set a
+# registry mirror instead
+INJECT_BASE_IMAGE=${INJECT_BASE_IMAGE:-public.ecr.aws/lts/ubuntu:24.04}
+
 set -o pipefail # If using pipe in commands, fail for any non-exit 0
 set -o errexit # Exit immediately if a command exits with a non-zero status
 
 function docker_build() {
-    docker build -t inject-miniccc -f - . <<-'DONE'
-# use AWS public repo to avoid Docker Hub limits
-FROM public.ecr.aws/lts/ubuntu:24.04
+    docker build --build-arg "BASE_IMAGE=$INJECT_BASE_IMAGE" -t inject-miniccc -f - . <<-'DONE'
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 RUN apt update && apt install -y qemu-utils squashfs-tools
 COPY <<END inject.sh
 #!/usr/bin/env bash
@@ -141,6 +146,19 @@ commit
 save
 exit
 EOF
+
+# name NICs in PCI slot order on first boot: phenix's vrouter template writes
+# eth<idx> for the idx-th topology interface, which minimega attaches in PCI
+# slot order, but VyOS names NICs that have no hw-id yet by PCIe depth, then
+# by MAC, which minimega randomizes ("[[]" is a literal "[" because this
+# heredoc drops backslashes)
+RESOLVER=\$ROOTFS/usr/libexec/vyos/system/vyos-net-name-resolve.py
+sed -i 's|sorted(candidates, key=lambda c: (pcie_distance(c[[]1]), c[[]0]))|sorted(candidates, key=lambda c: (pcie_distance(c[1]), str((Path("/sys/class/net") / c[1] / "device").resolve()), c[0]))|' \$RESOLVER
+if ! grep -qF 'sorted(candidates, key=lambda c: (pcie_distance(c[1]), str((Path("/sys/class/net") / c[1] / "device").resolve()), c[0]))' \$RESOLVER ||
+    ! grep -qx 'from pathlib import Path' \$RESOLVER; then
+    echo "error: cannot patch \$RESOLVER to name NICs in PCI slot order: its first-boot sort or its Path import changed, so update build-vyos.sh" >&2
+    exit 1
+fi
 
 # cleanup
 #   - Squashfs opts ref: https://github.com/vyos/vyos-build/blob/c5d52ac7b9a2cf4c85a638ef65fbf073e366f9c1/data/defaults.toml#L21

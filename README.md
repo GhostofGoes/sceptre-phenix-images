@@ -140,8 +140,13 @@ recipe will not continue. To fix this, first delete the existing image by
 running `phenix image delete <target>`, then retry the `make <target>` command.
 In addition to creating and building the phenix image, the Makefile also runs
 `phenix image inject-miniexe ...` to automatically inject the `miniccc` binary
-into the image after it has finished building. One additional helper target
-included is `make clean` - after confirmation, this recipe will remove the
+into the image after it has finished building. The `minirouter` and
+`protonuke` recipes also inject the binary they are named after from the
+Makefile's directory; build it statically from
+[minimega](https://github.com/sandia-minimega/minimega) first, as the
+[image build workflow](./.github/workflows/image-build.yml) does. One
+additional helper target included is `make clean` - after confirmation, this
+recipe will remove the
 following files in the same directory as the Makefile:
 `*.log *.qc2 *.tar *.vmdb`. More details on the image recipes available in
 the Makefile are shown below.
@@ -167,9 +172,11 @@ the Makefile are shown below.
 | **_Target_** | **_OS / Release_**  | **_Includes_** | **_Notes_** | **_GUI?_** |
 | ------------ | ------------------- | -------------- | ----------- | ---------- |
 | bookworm | Debian / bookworm | | | :white_check_mark: |
-| kali | Kali / kali-rolling | `kali-tools-top10` | | :white_check_mark: |
+| kali | Kali / kali-rolling | `kali-tools-top10` | A Firefox policy (`SkipTermsOfUse`) accepts Mozilla's Terms of Use. | :white_check_mark: |
 | jammy | Ubuntu / jammy | | | :white_check_mark: |
 | noble | Ubuntu / noble | | | :white_check_mark: |
+| ubuntu | Ubuntu / noble | `ubuntu` user with passwordless sudo, OpenSSH server, ping, nano, the `noble-updates` and `noble-security` pockets | Headless general-purpose guest of the [helloworld topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/helloworld), upgraded from those pockets at build | :x: |
+| miniccc | Ubuntu / noble | the `noble-updates` and `noble-security` pockets | Headless guest that only runs miniccc, upgraded like `ubuntu`, for the placeholder `soar` node of the `soar` topology of the [wind plant](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/renewables/wind/plant) | :x: |
 
 ## Experiment Linux Images
 
@@ -178,12 +185,21 @@ the Makefile are shown below.
 | bennu | Ubuntu / jammy | Bennu, Brash | Official SCEPTRE image used for running bennu in experiments (includes brash shell) | :x: |
 | docker-hello-world | Ubuntu / jammy | Docker | Shows how you can run a service (dockerd) inside the chroot image build environment | :x: |
 | ntp | Ubuntu / jammy | [ntpd](https://linux.die.net/man/8/ntpd) | Network time protocol server | :x: |
+| e2e | Ubuntu / noble | ntpsec, socat, iperf3, hping3, ettercap, snort, WireGuard tools | Headless guest the phenix end-to-end tests boot | :x: |
 | vyos | VyOS / 1.5 | [VyOS](https://docs.vyos.io/en/latest/) | Open-source enterprise-grade router platform | :x: |
 | minirouter | Ubuntu / noble | miniccc/minirouter | Minimega-based router | :x: |
+| protonuke | Ubuntu / noble | miniccc/[protonuke](https://github.com/sandia-minimega/minimega/tree/master/cmd/protonuke) | minimega's traffic generator, for the HTTP, HTTPS and SMTP servers and clients of the [wind plant topologies](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/renewables/wind/plant): `protonuke.service` runs it with the `PROTONUKE_ARGS` the phenix `protonuke` app injects in `/etc/default/protonuke`, and is skipped without that file | :x: |
 | soaptools | Ubuntu / jammy | filebeat,zeek,msf | preconfigured image for the [soap-hil topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/soap-hil) | :white_check_mark:  |
-| kali-harmonie | Kali / kali-rolling | Scapy, pybind11, HELICS, pyOpenDNP3, elasticsearch-py | Kali Linux image for the HARMONIE-SPS LDRD. | :white_check_mark: |
-| OT-Sim | Ubuntu / focal | OT-Sim, PandaPower, pyOpenDNP3, HELICS | Ubuntu image for OT-SIM and Panda Power projects | :x: |
+| kali-harmonie | Kali / kali-rolling | Scapy, pybind11, HELICS, elasticsearch-py | Kali Linux image for the HARMONIE-SPS LDRD. A Firefox policy (`SkipTermsOfUse`) accepts Mozilla's Terms of Use. | :white_check_mark: |
+| OT-Sim | Ubuntu / focal | OT-Sim, PandaPower, pyOpenDNP3, HELICS | Ubuntu image for OT-SIM and Panda Power projects, and the controllers and blades of the [wind turbine topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/renewables/wind/turbine) | :x: |
+| grafana | Ubuntu / noble | [Grafana](https://grafana.com/oss/grafana/) 12, [Loki](https://grafana.com/oss/loki/) 3, [Elasticsearch](https://www.elastic.co/elasticsearch) 8.19.23 | Dashboard node of the [wind turbine topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/renewables/wind/turbine): Grafana and Elasticsearch start at boot with the configs and dashboard the topology injects | :x: |
+| wireguard | Ubuntu / noble | [WireGuard](https://www.wireguard.com/) tools, iproute2, ping, tcpdump, [Wazuh](https://wazuh.com/) agent 4.14.9 (disabled) | VPN nodes (`guard-cli`, `guard-jh`) of the [wind plant topologies](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/renewables/wind/plant): IPv4 forwarding is on, and the phenix `wireguard` app injects `wg0.conf` and enables `wg-quick@wg0`; a topology that wants the Wazuh agent injects its `ossec.conf` and starts `wazuh-agent.service` | :x: |
+| zeek | Ubuntu / noble | [Zeek](https://zeek.org) LTS 8.0, [Filebeat](https://www.elastic.co/beats/filebeat) 8 with its Zeek module, Open vSwitch | ids node of the [wind plant](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/renewables/wind/plant) nids and soar topologies: `zeek.service` runs Zeek on the `gre_sys` device of the mirror app's OVS GRE port, and Filebeat ships Zeek's JSON logs with the config the topology injects | :x: |
+| wazuh-manager | Ubuntu / noble | [Wazuh](https://wazuh.com) manager 4.14, [Elasticsearch](https://www.elastic.co/elasticsearch) 8, [Filebeat](https://www.elastic.co/beats/filebeat) 8 | Wazuh manager node of the [wind plant topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/renewables/wind/plant) (hids, nids and soar), which injects nothing into it: agents report on port 1514 over TCP or UDP and enroll on port 1515, Filebeat ships the alerts to Elasticsearch, which listens on port 9200 with security off for the topology's other clients | :x: |
+| elasticsearch | Ubuntu / noble | [Elasticsearch](https://www.elastic.co/elasticsearch) 8.19.23, [Kibana](https://www.elastic.co/kibana) 8.19.23, [Packetbeat](https://www.elastic.co/beats/packetbeat) 8.19.23 dashboards, Firefox | Elastic server of the phenix `soh` app's packet capture (`packetCapture.elasticImage`, as in the [soap-legacy topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/soap-legacy)): Elasticsearch (security off) and Kibana start at boot with the configs `soh` injects, `query-flows.sh` answers `soh`'s flow query, and Firefox opens Kibana on the VM's console, with a policy (`SkipTermsOfUse`) that accepts Mozilla's Terms of Use | :white_check_mark: |
+| packetbeat | Ubuntu / noble | [Packetbeat](https://www.elastic.co/beats/packetbeat) 8.19.23 | Monitor VM of the phenix `soh` app's packet capture (`packetCapture.packetBeatImage`): Packetbeat starts at boot with the `packetbeat.yml` `soh` injects, sniffs the traffic `soh` mirrors to `eth1` and ships its flows to the `elasticsearch` image, which loads Packetbeat's Kibana dashboards itself | :x: |
 | bennu-dev | Ubuntu / jammy | Bennu, Brash, VS Code, xrdp, Remmina, GNOME Web, Wireshark, Nmap | A modified version of the bennu image used for developing and troubleshooting bennu mid-experiment | :white_check_mark: |
+| caldera | Ubuntu / noble | [MITRE Caldera](https://caldera.mitre.org) 5.3.0 with its plugins and Atomic Red Team abilities, the DNP3, Modbus, OT and phenix plugins, Firefox | Server for the phenix `caldera` app and SCORCH `caldera` component: `caldera.service` runs Caldera from the `conf/default.yml` the app injects and serves its UI and Sandcat agents on port 8888; a Firefox policy (`SkipTermsOfUse`) accepts Mozilla's Terms of Use | :white_check_mark: |
 
 ## Contributing
 
