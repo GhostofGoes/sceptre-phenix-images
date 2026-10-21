@@ -66,6 +66,7 @@ jobs:
             ubuntu-soaptools,
             ot-sim,
             grafana,
+            wireguard,
             bennu-dev,
             caldera
           ]

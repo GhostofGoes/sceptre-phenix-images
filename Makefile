@@ -1,4 +1,4 @@
-.PHONY: help check_clean bookworm kali kali-harmonie jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana caldera lint install-dev update-actions
+.PHONY: help check_clean bookworm kali kali-harmonie jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana wireguard caldera lint install-dev update-actions
 
 .ONESHELL: # for heredoc and exit
 # With .ONESHELL a recipe is one shell script, so make only sees its last
@@ -128,6 +128,14 @@ grafana:
 	@$(CHECK_IMAGE)
 	@$(CHECK_TAR)
 	@$(PHENIX) image create -r noble -s 50G -P gpg -T $(WORKDIR)/scripts/grafana.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build wireguard.qc2		-- Ubuntu Noble, WireGuard tools, Wazuh agent 4.14.9 (wind plant VPN nodes)
+wireguard:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -P wireguard-tools,iproute2,iputils-ping,tcpdump,gpg -T $(WORKDIR)/scripts/wireguard.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 
