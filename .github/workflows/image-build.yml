@@ -50,6 +50,7 @@ jobs:
             ot-sim,
             grafana,
             wireguard,
+            zeek,
             bennu-dev,
             caldera
           ]
@@ -201,6 +202,7 @@ jobs:
             ot-sim,
             grafana,
             wireguard,
+            zeek,
             bennu-dev,
             caldera
           ]

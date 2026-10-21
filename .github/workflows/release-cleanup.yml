@@ -67,6 +67,7 @@ jobs:
             ot-sim,
             grafana,
             wireguard,
+            zeek,
             bennu-dev,
             caldera
           ]
