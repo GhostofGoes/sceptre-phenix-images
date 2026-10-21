@@ -1,4 +1,4 @@
-.PHONY: help check_clean bookworm kali kali-harmonie jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana wireguard zeek wazuh-manager caldera lint install-dev update-actions
+.PHONY: help check_clean bookworm kali kali-harmonie jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana wireguard zeek wazuh-manager elasticsearch packetbeat caldera lint install-dev update-actions
 
 .ONESHELL: # for heredoc and exit
 # With .ONESHELL a recipe is one shell script, so make only sees its last
@@ -152,6 +152,22 @@ wazuh-manager:
 	@$(CHECK_IMAGE)
 	@$(CHECK_TAR)
 	@$(PHENIX) image create -r noble -s 20G -P gpg,jq -T $(WORKDIR)/scripts/wazuh-manager.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build elasticsearch.qc2	-- Ubuntu Noble, Elasticsearch 8.19.23, Kibana 8.19.23, Firefox, GUI (soh packet capture server)
+elasticsearch:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -v mingui -s 25G -P gpg -T $(WORKDIR)/scripts/elasticsearch.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build packetbeat.qc2		-- Ubuntu Noble, Packetbeat 8.19.23 (soh packet capture monitor)
+packetbeat:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -P gpg -T $(WORKDIR)/scripts/packetbeat.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 
