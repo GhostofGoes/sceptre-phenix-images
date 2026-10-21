@@ -51,6 +51,7 @@ jobs:
             grafana,
             wireguard,
             zeek,
+            wazuh-manager,
             bennu-dev,
             caldera
           ]
@@ -203,6 +204,7 @@ jobs:
             grafana,
             wireguard,
             zeek,
+            wazuh-manager,
             bennu-dev,
             caldera
           ]
