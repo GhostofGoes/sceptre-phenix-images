@@ -15,6 +15,20 @@ pip3 install --break-system-packages helics python-dateutil elasticsearch~=7.17
 
 apt-get install -y firefox-esr kali-desktop-xfce kali-linux-default tcpdump nmap wireshark jq kali-grant-root dos2unix zip unzip tree nano arping
 
+# Firefox 138 and later can open a Terms of Use dialog over the page at first
+# launch. The SkipTermsOfUse policy (Firefox ESR 140 and later) accepts
+# Mozilla's Terms of Use for the image's users, so Firefox does not show the
+# dialog. When /etc/firefox/policies/policies.json exists, Firefox ignores the
+# policies.json in its distribution directory, so the file starts from the one
+# that Kali's kali-defaults-desktop package installs there.
+mkdir -p /etc/firefox/policies
+if [ -f /usr/share/firefox-esr/distribution/policies.json ]; then
+    jq '.policies.SkipTermsOfUse = true' /usr/share/firefox-esr/distribution/policies.json > /etc/firefox/policies/policies.json
+else
+    echo '{"policies": {"SkipTermsOfUse": true}}' > /etc/firefox/policies/policies.json
+fi
+test "$(jq '.policies.SkipTermsOfUse' /etc/firefox/policies/policies.json)" = true || exit 1
+
 # Kali Linux uses ntpsec (a hardened fork of NTP) instead of ntp, and comes installed with it by default.
 # This is problematic from a SCEPTRE perspective, since the ntp app just assumes everything uses NTP, and
 # injects /etc/ntp.conf on all Linux systems. To work around this, make ntpsec's configuration a symlink
