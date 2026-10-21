@@ -69,6 +69,8 @@ jobs:
             wireguard,
             zeek,
             wazuh-manager,
+            elasticsearch,
+            packetbeat,
             bennu-dev,
             caldera
           ]
