@@ -147,6 +147,19 @@ save
 exit
 EOF
 
+# name NICs in PCI slot order on first boot: phenix's vrouter template writes
+# eth<idx> for the idx-th topology interface, which minimega attaches in PCI
+# slot order, but VyOS names NICs that have no hw-id yet by PCIe depth, then
+# by MAC, which minimega randomizes ("[[]" is a literal "[" because this
+# heredoc drops backslashes)
+RESOLVER=\$ROOTFS/usr/libexec/vyos/system/vyos-net-name-resolve.py
+sed -i 's|sorted(candidates, key=lambda c: (pcie_distance(c[[]1]), c[[]0]))|sorted(candidates, key=lambda c: (pcie_distance(c[1]), str((Path("/sys/class/net") / c[1] / "device").resolve()), c[0]))|' \$RESOLVER
+if ! grep -qF 'sorted(candidates, key=lambda c: (pcie_distance(c[1]), str((Path("/sys/class/net") / c[1] / "device").resolve()), c[0]))' \$RESOLVER ||
+    ! grep -qx 'from pathlib import Path' \$RESOLVER; then
+    echo "error: cannot patch \$RESOLVER to name NICs in PCI slot order: its first-boot sort or its Path import changed, so update build-vyos.sh" >&2
+    exit 1
+fi
+
 # cleanup
 #   - Squashfs opts ref: https://github.com/vyos/vyos-build/blob/c5d52ac7b9a2cf4c85a638ef65fbf073e366f9c1/data/defaults.toml#L21
 mksquashfs \$ROOTFS \$SQUASHFS -comp xz -Xbcj x86 -b 256k -always-use-fragments -no-recovery

@@ -34,6 +34,17 @@ The build script has a command line option to install and configure the
 > Using `phenix image inject-miniexe` will not work with the VyOS image as built
 > by this script due to the differences in VyOS's image filesystem layout.
 
+## NIC Naming
+
+When it injects `miniccc`, the build also patches VyOS's first-boot interface
+naming, so the image names its NICs `eth0` to `ethN` in PCI slot order, whatever
+their MACs. The phenix `vrouter` app writes the settings of the idx-th topology
+interface to `eth<idx>`, and minimega attaches a VM's NICs to PCI slots in that
+order with random MACs. Stock VyOS names NICs that have no `hw-id` in
+`config.boot` yet by MAC when they are at the same PCIe depth, so addresses,
+routing and firewall rules would land on the wrong networks. The build fails if
+the patch no longer applies to a newer VyOS.
+
 ## Startup Script Injection
 
 As part of the build, a startup script is added to the automated postconfig
