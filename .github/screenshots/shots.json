@@ -62,7 +62,7 @@
         "title": "Caldera in Firefox on the desktop",
         "kind": "screen",
         "wait": "pgrep -x xfdesktop >/dev/null && curl -fs -o /dev/null --max-time 5 http://localhost:8888/ && echo up",
-        "prep": "f=/etc/firefox/policies/policies.json; mkdir -p /etc/firefox/policies; if [ -s $f ]; then sed -i 's/{\"policies\": *{/{\"policies\": {\"SkipTermsOfUse\": true, /' $f; else echo '{\"policies\": {\"SkipTermsOfUse\": true}}' > $f; fi; pkill -f '^(/usr/lib/firefox/)?firefox( |$)'; for i in $(seq 20); do pgrep -f '^(/usr/lib/firefox/)?firefox( |$)' >/dev/null || break; sleep 1; done; pkill -9 -f '^(/usr/lib/firefox/)?firefox( |$)'; rm -f /root/.mozilla/firefox/*/lock /root/.mozilla/firefox/*/.parentlock; export DISPLAY=:0; for a in /root/.Xauthority /var/run/lightdm/root/:0; do [ -f \"$a\" ] && export XAUTHORITY=\"$a\" && break; done; nohup setsid firefox --new-window http://localhost:8888/ >/dev/null 2>&1 & sleep 40; echo opened"
+        "prep": "pkill -f '^(/usr/lib/firefox/)?firefox( |$)'; for i in $(seq 20); do pgrep -f '^(/usr/lib/firefox/)?firefox( |$)' >/dev/null || break; sleep 1; done; pkill -9 -f '^(/usr/lib/firefox/)?firefox( |$)'; rm -f /root/.mozilla/firefox/*/lock /root/.mozilla/firefox/*/.parentlock; export DISPLAY=:0; for a in /root/.Xauthority /var/run/lightdm/root/:0; do [ -f \"$a\" ] && export XAUTHORITY=\"$a\" && break; done; nohup setsid firefox --new-window http://localhost:8888/ >/dev/null 2>&1 & sleep 40; echo opened"
       },
       {
         "title": "Caldera sign-in page",
@@ -377,7 +377,7 @@
         "title": "Kibana in Firefox on the desktop",
         "kind": "screen",
         "wait": "pgrep -x xfdesktop >/dev/null && curl -fs -o /dev/null --max-time 5 http://localhost:5601/api/status && echo up",
-        "prep": "f=/etc/firefox/policies/policies.json; mkdir -p /etc/firefox/policies; if [ -s $f ]; then sed -i 's/{\"policies\": *{/{\"policies\": {\"SkipTermsOfUse\": true, /' $f; else echo '{\"policies\": {\"SkipTermsOfUse\": true}}' > $f; fi; pkill -f '^(/usr/lib/firefox/)?firefox( |$)'; for i in $(seq 20); do pgrep -f '^(/usr/lib/firefox/)?firefox( |$)' >/dev/null || break; sleep 1; done; pkill -9 -f '^(/usr/lib/firefox/)?firefox( |$)'; rm -f /root/.mozilla/firefox/*/lock /root/.mozilla/firefox/*/.parentlock; export DISPLAY=:0; for a in /root/.Xauthority /var/run/lightdm/root/:0; do [ -f \"$a\" ] && export XAUTHORITY=\"$a\" && break; done; nohup setsid firefox --new-window http://localhost:5601/app/home >/dev/null 2>&1 & sleep 40; echo opened"
+        "prep": "pkill -f '^(/usr/lib/firefox/)?firefox( |$)'; for i in $(seq 20); do pgrep -f '^(/usr/lib/firefox/)?firefox( |$)' >/dev/null || break; sleep 1; done; pkill -9 -f '^(/usr/lib/firefox/)?firefox( |$)'; rm -f /root/.mozilla/firefox/*/lock /root/.mozilla/firefox/*/.parentlock; export DISPLAY=:0; for a in /root/.Xauthority /var/run/lightdm/root/:0; do [ -f \"$a\" ] && export XAUTHORITY=\"$a\" && break; done; nohup setsid firefox --new-window http://localhost:5601/app/home >/dev/null 2>&1 & sleep 40; echo opened"
       },
       {
         "title": "Packetbeat dashboards loaded into Kibana",
