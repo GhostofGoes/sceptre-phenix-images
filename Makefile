@@ -1,4 +1,4 @@
-.PHONY: help check_clean bookworm kali kali-harmonie jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana caldera lint install-dev update-actions
+.PHONY: help check_clean bookworm kali kali-harmonie jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana caldera lint install-dev update-actions
 
 .ONESHELL: # for heredoc and exit
 # With .ONESHELL a recipe is one shell script, so make only sees its last
@@ -170,6 +170,19 @@ _minirouter_img: # use _img to avoid conflict with minirouter binary
 	@$(INJECT_MINICCC)
 	if test -f $(WORKDIR)/$(@).qc2; then $(PHENIX) image inject-miniexe $(WORKDIR)/minirouter $(WORKDIR)/$(@).qc2; echo "----- Injected minirouter into $(@).qc2 -----"; fi
 	@mv -f $(WORKDIR)/$(@).qc2 $(WORKDIR)/minirouter.qc2
+
+# Build protonuke.qc2		-- Ubuntu Noble, minimega protonuke traffic generator (wind plant topologies)
+protonuke: _protonuke_img
+
+_protonuke_img: # use _img to avoid conflict with protonuke binary
+	@if [ ! -f $(WORKDIR)/protonuke ]; then echo "\n\tprotonuke binary not found: '$(WORKDIR)/protonuke' -- build minimega's cmd/protonuke statically and put it there first\n"; exit 1; fi
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -T $(WORKDIR)/scripts/protonuke.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+	@if test -f $(WORKDIR)/$(@).qc2; then $(PHENIX) image inject-miniexe $(WORKDIR)/protonuke $(WORKDIR)/$(@).qc2; echo "----- Injected protonuke into $(@).qc2 -----"; fi
+	@mv -f $(WORKDIR)/$(@).qc2 $(WORKDIR)/protonuke.qc2
 
 # Build ubuntu-soaptools.qc2	-- Ubuntu Jammy, soaptools
 ubuntu-soaptools:
