@@ -62,6 +62,7 @@ jobs:
             e2e,
             vyos,
             minirouter,
+            protonuke,
             ubuntu-soaptools,
             ot-sim,
             grafana,

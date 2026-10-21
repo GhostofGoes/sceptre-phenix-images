@@ -140,8 +140,13 @@ recipe will not continue. To fix this, first delete the existing image by
 running `phenix image delete <target>`, then retry the `make <target>` command.
 In addition to creating and building the phenix image, the Makefile also runs
 `phenix image inject-miniexe ...` to automatically inject the `miniccc` binary
-into the image after it has finished building. One additional helper target
-included is `make clean` - after confirmation, this recipe will remove the
+into the image after it has finished building. The `minirouter` and
+`protonuke` recipes also inject the binary they are named after from the
+Makefile's directory; build it statically from
+[minimega](https://github.com/sandia-minimega/minimega) first, as the
+[image build workflow](./.github/workflows/image-build.yml) does. One
+additional helper target included is `make clean` - after confirmation, this
+recipe will remove the
 following files in the same directory as the Makefile:
 `*.log *.qc2 *.tar *.vmdb`. More details on the image recipes available in
 the Makefile are shown below.
@@ -183,6 +188,7 @@ the Makefile are shown below.
 | e2e | Ubuntu / noble | ntpsec, socat, iperf3, hping3, ettercap, snort, WireGuard tools | Headless guest the phenix end-to-end tests boot | :x: |
 | vyos | VyOS / 1.5 | [VyOS](https://docs.vyos.io/en/latest/) | Open-source enterprise-grade router platform | :x: |
 | minirouter | Ubuntu / noble | miniccc/minirouter | Minimega-based router | :x: |
+| protonuke | Ubuntu / noble | miniccc/[protonuke](https://github.com/sandia-minimega/minimega/tree/master/cmd/protonuke) | minimega's traffic generator, for the HTTP, HTTPS and SMTP servers and clients of the [wind plant topologies](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/renewables/wind/plant): `protonuke.service` runs it with the `PROTONUKE_ARGS` the phenix `protonuke` app injects in `/etc/default/protonuke`, and is skipped without that file | :x: |
 | soaptools | Ubuntu / jammy | filebeat,zeek,msf | preconfigured image for the [soap-hil topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/soap-hil) | :white_check_mark:  |
 | kali-harmonie | Kali / kali-rolling | Scapy, pybind11, HELICS, elasticsearch-py | Kali Linux image for the HARMONIE-SPS LDRD. | :white_check_mark: |
 | OT-Sim | Ubuntu / focal | OT-Sim, PandaPower, pyOpenDNP3, HELICS | Ubuntu image for OT-SIM and Panda Power projects, and the controllers and blades of the [wind turbine topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/renewables/wind/turbine) | :x: |
