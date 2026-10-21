@@ -1,4 +1,4 @@
-.PHONY: help check_clean bookworm kali kali-harmonie jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana wireguard caldera lint install-dev update-actions
+.PHONY: help check_clean bookworm kali kali-harmonie jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana wireguard zeek caldera lint install-dev update-actions
 
 .ONESHELL: # for heredoc and exit
 # With .ONESHELL a recipe is one shell script, so make only sees its last
@@ -136,6 +136,14 @@ wireguard:
 	@$(CHECK_IMAGE)
 	@$(CHECK_TAR)
 	@$(PHENIX) image create -r noble -P wireguard-tools,iproute2,iputils-ping,tcpdump,gpg -T $(WORKDIR)/scripts/wireguard.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build zeek.qc2		-- Ubuntu Noble, Zeek LTS, Filebeat 8, Open vSwitch (wind plant ids node)
+zeek:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(PHENIX) image create -r noble -s 20G -P gpg,openvswitch-switch -T $(WORKDIR)/scripts/zeek.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 
