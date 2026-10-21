@@ -262,9 +262,12 @@ EOF
 # Firefox
 # ------------------------------------------------------------------------------
 
+# Firefox 138 and later open a Terms of Use dialog over the page at first
+# launch. SkipTermsOfUse accepts Mozilla's Terms of Use for the image's users,
+# so Firefox does not show the dialog over Kibana.
 install -d -m 0755 /etc/firefox/policies /root/.config/autostart
 cat > /etc/firefox/policies/policies.json <<'EOF'
-{"policies": {"DisableAppUpdate": true, "DisableTelemetry": true, "DontCheckDefaultBrowser": true, "OverrideFirstRunPage": "", "OverridePostUpdatePage": ""}}
+{"policies": {"DisableAppUpdate": true, "DisableTelemetry": true, "DontCheckDefaultBrowser": true, "OverrideFirstRunPage": "", "OverridePostUpdatePage": "", "SkipTermsOfUse": true}}
 EOF
 cat > /usr/local/bin/phenix-kibana-browser <<'EOF'
 #!/bin/sh

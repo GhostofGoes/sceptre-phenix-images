@@ -71,6 +71,13 @@ apt-get -y clean
 # build, not the snap wrapper.
 test "$(readlink -f "$(command -v firefox)")" = /usr/lib/firefox/firefox
 install -d -m 0755 /etc/firefox/policies /root/.config/autostart
+# Firefox 138 and later open a Terms of Use dialog over the page at first
+# launch. SkipTermsOfUse accepts Mozilla's Terms of Use for the image's users,
+# so Firefox does not show the dialog over Caldera. The caldera app replaces
+# this file with one that also sets SkipTermsOfUse, and adds a bookmark.
+cat > /etc/firefox/policies/policies.json <<'EOF'
+{"policies": {"SkipTermsOfUse": true}}
+EOF
 
 # ------------------------------------------------------------------------------
 # Caldera
