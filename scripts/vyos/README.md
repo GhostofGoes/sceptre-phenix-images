@@ -1,8 +1,8 @@
 # VyOS Image Builder
 
 The `build-vyos.sh` script can be used to easily build a `vyos.qc2` VM image
-using the source code from the latest rolling branch of VyOS (currently `v1.5` -
-[Circinus](https://docs.vyos.io/en/rolling/introducing/history.html#circinus-1-5)).
+using the source code from the latest rolling branch of VyOS, which vyos-build
+versions `999.<timestamp>`.
 
 The script first uses a Docker image to build the qcow2 file from source, then
 optionally uses a separate Docker image to inject the `miniccc` binary and set
@@ -33,6 +33,18 @@ The build script has a command line option to install and configure the
 > [!WARNING]
 > Using `phenix image inject-miniexe` will not work with the VyOS image as built
 > by this script due to the differences in VyOS's image filesystem layout.
+
+## NIC Naming
+
+The image must name its NICs `eth0` to `ethN` in PCI slot order, whatever their
+MACs. The phenix `vrouter` app writes the settings of the idx-th topology
+interface to `eth<idx>`, and minimega attaches a VM's NICs to PCI slots in that
+order with random MACs. VyOS rolling names NICs that have no `hw-id` in
+`config.boot` yet by PCI address (`canonical_sort_key` in vyos-1x
+`ifname_store`), so the build does not change it. Older VyOS named NICs at the
+same PCIe depth by MAC, which put addresses, routing and firewall rules on the
+wrong networks. The phenix E2E check of this image boots it with its MACs in
+descending order and fails if VyOS names the NICs in another order.
 
 ## Startup Script Injection
 
