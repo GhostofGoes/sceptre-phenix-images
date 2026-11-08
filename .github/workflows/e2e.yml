@@ -13,7 +13,7 @@ on:
       - '.github/scripts/changed_recipes.py'
       - '.github/workflows/e2e.yml'
   push:
-    branches: ['main', 'ci-e2e-minimega']
+    branches: ['main']
     paths:
       - 'Makefile'
       - 'overlays/**'
@@ -87,7 +87,7 @@ jobs:
       contents: read
     # First-party workflow, deliberately tracking phenix's branch so recipes
     # are tested against the phenix they will be used with.
-    uses: GhostofGoes/sceptre-phenix/.github/workflows/e2e.yml@ci-e2e-minimega  # zizmor: ignore[unpinned-uses]
+    uses: GhostofGoes/sceptre-phenix/.github/workflows/e2e-minimega.yml@ci-e2e-minimega  # zizmor: ignore[unpinned-uses]
     with:
       phenix-repository: GhostofGoes/sceptre-phenix
       phenix-ref: ci-e2e-minimega
