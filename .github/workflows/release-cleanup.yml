@@ -44,6 +44,8 @@ jobs:
 
   cleanup-old-images:
     strategy:
+      # A package that has never been published fails its job; keep the others.
+      fail-fast: false
       matrix:
         build:
           [
@@ -52,14 +54,25 @@ jobs:
             kali-harmonie,
             jammy,
             noble,
+            ubuntu,
+            miniccc,
             bennu,
             docker-hello-world,
             ntp,
+            e2e,
             vyos,
             minirouter,
+            protonuke,
             ubuntu-soaptools,
             ot-sim,
-            bennu-dev
+            grafana,
+            wireguard,
+            zeek,
+            wazuh-manager,
+            elasticsearch,
+            packetbeat,
+            bennu-dev,
+            caldera
           ]
     name: Delete Untagged Images
     runs-on: ubuntu-latest

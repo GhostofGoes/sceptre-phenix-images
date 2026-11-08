@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# This script will build a VyOS qcow2 image inside a docker container. The
-# VyOS version is set to 'rolling' and matches v1.5. Optionally, the full
-# path to a miniccc binary can be passed as another command line argument
-# and it will be injected into the final image, including a startup script
-# that runs on bootup. The final qcow2 image will be at: ./vyos.qc2
+# This script will build a VyOS qcow2 image inside a docker container from
+# the 'rolling' branch, which vyos-build versions 999.<timestamp>. Optionally,
+# the full path to a miniccc binary can be passed as another command line
+# argument and it will be injected into the final image, including a startup
+# script that runs on bootup. The final qcow2 image will be at: ./vyos.qc2
 #
 #   Usage: ./build-vyos.sh [-m <path to miniccc>]
 
@@ -15,13 +15,18 @@ CWD=$(pwd)
 # used for miniccc injection step
 VYOSTMP=${VYOSTMP:-"$CWD/vyostmp/"}
 
+# base image of the miniccc injection container; Microsoft's mirror of the
+# Docker Hub library images avoids the Docker Hub and AWS ECR rate limits, and
+# INJECT_BASE_IMAGE can point at another registry mirror instead
+INJECT_BASE_IMAGE=${INJECT_BASE_IMAGE:-mcr.microsoft.com/mirror/docker/library/ubuntu:24.04}
+
 set -o pipefail # If using pipe in commands, fail for any non-exit 0
 set -o errexit # Exit immediately if a command exits with a non-zero status
 
 function docker_build() {
-    docker build -t inject-miniccc -f - . <<-'DONE'
-# use Microsoft Container Registry mirror of Docker Hub to avoid Docker Hub & AWS ECR rate limits
-FROM mcr.microsoft.com/mirror/docker/library/ubuntu:24.04
+    docker build --build-arg "BASE_IMAGE=$INJECT_BASE_IMAGE" -t inject-miniccc -f - . <<-'DONE'
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 RUN apt update && apt install -y qemu-utils squashfs-tools
 COPY <<END inject.sh
 #!/usr/bin/env bash
@@ -31,15 +36,19 @@ set -o nounset # Error on unset variables
 set -o errexit # Exit immediately if a command exits with a non-zero status
 set -x
 
+# the image is vyos-<version>-<flavor>-<arch>.qcow2 and holds its rootfs at
+# boot/<version>/<version>.squashfs; the version is 999.<timestamp> on rolling
+# and <major>-rolling-<timestamp> on the release branches (vyos-build T9547)
 FILE=\$(ls vyos-build/build/*.qcow2)
-VERSION=\$(basename \$FILE | cut -d- -f2)
-DATESTAMP=\$(basename \$FILE | cut -d- -f4)
+VERSION=\$(basename \$FILE .qcow2)
+VERSION=\${VERSION#vyos-}
+VERSION=\${VERSION%-*-*}
 
 # mount squashfs rootfs as rw
 MOUNT=/tmp/mount
 BOOT_PATH=\$MOUNT/boot
-VERSION_DIR=\$VERSION-rolling-\$DATESTAMP
-SQUASHFS=\$VERSION-rolling-\$DATESTAMP.squashfs
+VERSION_DIR=\$VERSION
+SQUASHFS=\$VERSION.squashfs
 UNPACK_PATH=/scratch
 ROOTFS=\$UNPACK_PATH/squashfs-root
 
