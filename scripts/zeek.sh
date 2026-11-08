@@ -14,11 +14,12 @@ set -ex
 export LC_ALL=C
 export DEBIAN_FRONTEND=noninteractive
 
-# Ubuntu noble has no Zeek package, so Zeek LTS comes from the OBS
-# security:zeek repository. OBS keeps only the latest build of each package, so
-# Zeek is pinned to its LTS line: a new line fails the build instead of being
-# installed untested. Filebeat is the release the other Elastic recipes pin;
-# its Zeek module is not in the Apache-licensed filebeat-oss package.
+# Ubuntu noble has no Zeek package, so Zeek comes from the OBS security:zeek
+# repository. OBS keeps only the latest build of each package, and its zeek-lts
+# packages move to each new LTS line (9.0 in November 2026), so the image
+# installs the versioned packages of the LTS line it was tested with. Filebeat
+# is the release the other Elastic recipes pin; its Zeek module is not in the
+# Apache-licensed filebeat-oss package.
 ZEEK_LTS=8.0
 FILEBEAT_VERSION=8.19.23
 # The repositories' signing keys, as OBS and Elastic publish them. The OBS key
@@ -56,18 +57,6 @@ Components: main
 Architectures: amd64
 Signed-By: /etc/apt/keyrings/elastic.asc
 EOF
-# One file per pin: phenix drops blank lines from build scripts, which would
-# merge two stanzas of one file into a single record.
-cat > /etc/apt/preferences.d/zeek-lts-core <<EOF
-Package: zeek-lts-core
-Pin: version ${ZEEK_LTS}.*
-Pin-Priority: 1001
-EOF
-cat > /etc/apt/preferences.d/zeekctl-lts <<EOF
-Package: zeekctl-lts
-Pin: version ${ZEEK_LTS}.*
-Pin-Priority: 1001
-EOF
 cat > /etc/apt/preferences.d/filebeat <<EOF
 Package: filebeat
 Pin: version ${FILEBEAT_VERSION}
@@ -75,14 +64,13 @@ Pin-Priority: 1001
 EOF
 
 apt-get update
-# Zeek and zeekctl only: the zeek-lts metapackage adds the development, Spicy
-# and zkg packages (over 250 MB installed) that a sensor does not use, and
+# Zeek and zeekctl only: the zeek-<line> metapackage adds the development,
+# Spicy and zkg packages (over 250 MB installed) that a sensor does not use, and
 # zeekctl's recommended mail transport agent is not needed either. Filebeat's
 # package prints no generated password (its postinst only reloads systemd), so
 # unlike the Elasticsearch recipes its install output needs no filtering.
-apt-get install -y --no-install-recommends zeek-lts-core zeekctl-lts filebeat
-test "$(dpkg-query -W -f '${Version}' zeek-lts-core | cut -d. -f1,2)" = "$ZEEK_LTS"
-test "$(dpkg-query -W -f '${Version}' zeekctl-lts | cut -d. -f1,2)" = "$ZEEK_LTS"
+apt-get install -y --no-install-recommends "zeek-$ZEEK_LTS-core" "zeekctl-$ZEEK_LTS" filebeat
+/opt/zeek/bin/zeek --version | grep -qF " version $ZEEK_LTS."
 test "$(dpkg-query -W -f '${Version}' filebeat)" = "$FILEBEAT_VERSION"
 
 # zeekctl deploy checks and installs the site policy and starts Zeek. Until the
