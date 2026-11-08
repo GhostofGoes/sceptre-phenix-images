@@ -187,7 +187,7 @@ e2e:
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 
-# Build vyos.qc2			-- VyOS 1.5
+# Build vyos.qc2			-- VyOS rolling
 vyos:
 	@cd $(WORKDIR)/scripts/vyos/
 	@VYOSTMP=$(VYOSTMP) ./build-vyos.sh -m $(MINICCC)

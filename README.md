@@ -186,7 +186,7 @@ the Makefile are shown below.
 | docker-hello-world | Ubuntu / noble | Docker | Shows how you can run a service (dockerd) inside the chroot image build environment | :x: |
 | ntp | Ubuntu / noble | [chrony](https://chrony-project.org/doc/latest/chronyd.html) - network time protocol server | | :x: |
 | e2e | Ubuntu / noble | ntpsec, socat, iperf3, hping3, ettercap, snort, WireGuard tools | Headless guest the phenix end-to-end tests boot | :x: |
-| vyos | VyOS / 1.5 | [VyOS](https://docs.vyos.io/en/latest/) | Open-source enterprise-grade router platform | :x: |
+| vyos | VyOS / rolling | [VyOS](https://docs.vyos.io/en/latest/) | Open-source enterprise-grade router platform | :x: |
 | minirouter | Ubuntu / noble | miniccc/minirouter | Minimega-based router | :x: |
 | protonuke | Ubuntu / noble | miniccc/[protonuke](https://github.com/sandia-minimega/minimega/tree/master/cmd/protonuke) | minimega's traffic generator, for the HTTP, HTTPS and SMTP servers and clients of the [wind plant topologies](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/renewables/wind/plant): `protonuke.service` runs it with the `PROTONUKE_ARGS` the phenix `protonuke` app injects in `/etc/default/protonuke`, and is skipped without that file | :x: |
 | soaptools | Ubuntu / jammy | filebeat,zeek,msf | preconfigured image for the [soap-hil topology](https://github.com/sandialabs/sceptre-phenix-topologies/tree/main/soap-hil) | :white_check_mark:  |
