@@ -133,7 +133,9 @@ jobs:
       - name: build miniccc, minirouter and protonuke
         working-directory: minimega-src
         env:
-          GOFLAGS: -mod=vendor
+          # minimega stopped vendoring its modules (sandia-minimega/minimega#1711),
+          # so they come from the module proxy, checked against go.sum.
+          GOFLAGS: -mod=readonly
           CGO_ENABLED: '0'
         run: |
           # minimega's build scripts generate internal/version, which the
