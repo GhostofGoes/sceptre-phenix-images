@@ -20,10 +20,19 @@ import tempfile
 from pathlib import Path
 
 # Targets that are not images.
-NOT_RECIPES = {"help", "check_clean", "clean", "lint", "install-dev", "update-actions"}
+# kali-purple-bundle stages container images for an offline kali-purple build.
+NOT_RECIPES = {
+    "help",
+    "check_clean",
+    "clean",
+    "lint",
+    "install-dev",
+    "update-actions",
+    "kali-purple-bundle",
+}
 
 TARGET = re.compile(r"^([A-Za-z0-9_-]+):(?!=)(.*)$")
-PATHS = re.compile(r"\$\(WORKDIR\)/((?:overlays|scripts)/[^\s,;]*)")
+PATHS = re.compile(r"\$\(WORKDIR\)/((?:overlays|scripts)/[^\s,;)]*)")
 
 
 def recipes(makefile: str) -> dict[str, set[str]]:
