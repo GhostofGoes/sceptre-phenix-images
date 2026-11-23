@@ -15,13 +15,18 @@ CWD=$(pwd)
 # used for miniccc injection step
 VYOSTMP=${VYOSTMP:-"$CWD/vyostmp/"}
 
+# base image of the miniccc injection container; Microsoft's mirror of the
+# Docker Hub library images avoids the Docker Hub and AWS ECR rate limits, and
+# INJECT_BASE_IMAGE can point at another registry mirror instead
+INJECT_BASE_IMAGE=${INJECT_BASE_IMAGE:-mcr.microsoft.com/mirror/docker/library/ubuntu:24.04}
+
 set -o pipefail # If using pipe in commands, fail for any non-exit 0
 set -o errexit # Exit immediately if a command exits with a non-zero status
 
 function docker_build() {
-    docker build -t inject-miniccc -f - . <<-'DONE'
-# use Microsoft Container Registry mirror of Docker Hub to avoid Docker Hub & AWS ECR rate limits
-FROM mcr.microsoft.com/mirror/docker/library/ubuntu:24.04
+    docker build --build-arg "BASE_IMAGE=$INJECT_BASE_IMAGE" -t inject-miniccc -f - . <<-'DONE'
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 RUN apt update && apt install -y qemu-utils squashfs-tools
 COPY <<END inject.sh
 #!/usr/bin/env bash
