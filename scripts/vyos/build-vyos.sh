@@ -243,22 +243,33 @@ function build_vyos() {
     sed -i 's/losetup --show/losetup --partscan --show/' scripts/image-build/raw_image.py
 
     # ensure the kernel in defaults.toml is available in the VyOS package mirror;
-    # the package is linux-image-<kernel_version>[-<kernel_revision>]-vyos
-    KERNEL_IN_CONFIG=$(sed -n 's/^kernel_version = "\(.*\)"/\1/p' data/defaults.toml)
-    KERNEL_REVISION=$(sed -n 's/^kernel_revision = "\(.*\)"/\1/p' data/defaults.toml)
-    KERNEL_PACKAGE=${KERNEL_IN_CONFIG}${KERNEL_REVISION:+-$KERNEL_REVISION}
+    # vyos-build installs linux-image-<kernel_version>-<kernel_revision>-vyos when
+    # defaults.toml has a kernel_revision, and linux-image-<kernel_version>-vyos
+    # when it does not, so only a package of the same form can replace it
+    toml_value() { sed -n "s/^$1 *= *[\"']\{0,1\}\([^\"']*\)[\"']\{0,1\} *\$/\1/p" data/defaults.toml; }
+    KERNEL_IN_CONFIG=$(toml_value kernel_version)
+    KERNEL_REVISION=$(toml_value kernel_revision)
+    if [ -n "$KERNEL_REVISION" ]; then
+        KERNEL_PACKAGE=${KERNEL_IN_CONFIG}-${KERNEL_REVISION}
+        KERNEL_PATTERN='^linux-image-[0-9][^-]*-[0-9]+-vyos$'
+    else
+        KERNEL_PACKAGE=${KERNEL_IN_CONFIG}
+        KERNEL_PATTERN='^linux-image-[0-9][^-]*-vyos$'
+    fi
     PACKAGES_LIST=$(curl -fsSL https://packages.vyos.net/repositories/rolling/dists/rolling/main/binary-amd64/Packages.gz 2>/dev/null | gzip -d 2>/dev/null || true)
     if [ -n "$PACKAGES_LIST" ] && ! grep -Fxq "Package: linux-image-${KERNEL_PACKAGE}-vyos" <<< "$PACKAGES_LIST"; then
-        AVAILABLE_KERNEL=$(awk -F': ' '$1=="Package" && $2 ~ /^linux-image-[0-9].*-vyos$/ && $2 !~ /-dbg$/ { gsub(/^linux-image-|-vyos$/, "", $2); print $2 }' <<< "$PACKAGES_LIST" | sort -V | tail -n1)
+        AVAILABLE_KERNEL=$(awk -F': ' -v pattern="$KERNEL_PATTERN" '$1=="Package" && $2 ~ pattern { gsub(/^linux-image-|-vyos$/, "", $2); print $2 }' <<< "$PACKAGES_LIST" | sort -V | tail -n1)
         if [ -n "$AVAILABLE_KERNEL" ]; then
             echo "WARNING: Kernel ${KERNEL_PACKAGE} not found in VyOS repository; using available ${AVAILABLE_KERNEL}"
-            if [ -n "$KERNEL_REVISION" ] && [[ "$AVAILABLE_KERNEL" == *-* ]]; then
+            if [ -n "$KERNEL_REVISION" ]; then
                 # split <version>-<revision> back into the two settings
-                sed -i -e "s/^kernel_version = .*/kernel_version = \"${AVAILABLE_KERNEL%-*}\"/" \
-                    -e "s/^kernel_revision = .*/kernel_revision = \"${AVAILABLE_KERNEL##*-}\"/" data/defaults.toml
+                sed -i -e "s/^kernel_version *=.*/kernel_version = \"${AVAILABLE_KERNEL%-*}\"/" \
+                    -e "s/^kernel_revision *=.*/kernel_revision = \"${AVAILABLE_KERNEL##*-}\"/" data/defaults.toml
             else
-                sed -i "s/^kernel_version = .*/kernel_version = \"${AVAILABLE_KERNEL}\"/" data/defaults.toml
+                sed -i "s/^kernel_version *=.*/kernel_version = \"${AVAILABLE_KERNEL}\"/" data/defaults.toml
             fi
+        else
+            echo "WARNING: no kernel of the form ${KERNEL_PATTERN} in the VyOS repository; leaving ${KERNEL_PACKAGE}"
         fi
     fi
 
