@@ -238,24 +238,14 @@ function build_vyos() {
     # fix losetup not populating the partitions on the image
     sed -i 's/losetup --show/losetup --partscan --show/' scripts/image-build/raw_image.py
 
-    # ensure the kernel in defaults.toml is available in the VyOS package mirror.
-    # vyos-build names the package linux-image-<kernel_version>-<kernel_revision>-vyos;
-    # a branch without kernel_revision names it linux-image-<kernel_version>-vyos
+    # ensure kernel_version in defaults.toml is available in the VyOS package mirror
     KERNEL_IN_CONFIG=$(sed -n 's/^kernel_version = "\(.*\)"/\1/p' data/defaults.toml)
-    KERNEL_REVISION=$(sed -n 's/^kernel_revision = "\(.*\)"/\1/p' data/defaults.toml)
-    KERNEL_PACKAGE=${KERNEL_IN_CONFIG}${KERNEL_REVISION:+-$KERNEL_REVISION}
     PACKAGES_LIST=$(curl -fsSL https://packages.vyos.net/repositories/rolling/dists/rolling/main/binary-amd64/Packages.gz 2>/dev/null | gzip -d 2>/dev/null || true)
-    if [ -n "$PACKAGES_LIST" ] && ! grep -Fxq "Package: linux-image-${KERNEL_PACKAGE}-vyos" <<< "$PACKAGES_LIST"; then
+    if [ -n "$PACKAGES_LIST" ] && ! grep -Fxq "Package: linux-image-${KERNEL_IN_CONFIG}-vyos" <<< "$PACKAGES_LIST"; then
         AVAILABLE_KERNEL=$(awk -F': ' '$1=="Package" && $2 ~ /^linux-image-[0-9].*-vyos$/ && $2 !~ /-dbg$/ { gsub(/^linux-image-|-vyos$/, "", $2); print $2 }' <<< "$PACKAGES_LIST" | sort -V | tail -n1)
         if [ -n "$AVAILABLE_KERNEL" ]; then
-            echo "WARNING: Kernel ${KERNEL_PACKAGE} not found in VyOS repository; using available ${AVAILABLE_KERNEL}"
-            if [ -n "$KERNEL_REVISION" ]; then
-                # the available name ends in the revision: 6.18.64-1 is version 6.18.64, revision 1
-                sed -i -e "s/^kernel_version = .*/kernel_version = \"${AVAILABLE_KERNEL%-*}\"/" \
-                    -e "s/^kernel_revision = .*/kernel_revision = \"${AVAILABLE_KERNEL##*-}\"/" data/defaults.toml
-            else
-                sed -i "s/^kernel_version = .*/kernel_version = \"${AVAILABLE_KERNEL}\"/" data/defaults.toml
-            fi
+            echo "WARNING: Kernel ${KERNEL_IN_CONFIG} not found in VyOS repository; using available ${AVAILABLE_KERNEL}"
+            sed -i "s/^kernel_version = .*/kernel_version = \"${AVAILABLE_KERNEL}\"/" data/defaults.toml
         fi
     fi
 
