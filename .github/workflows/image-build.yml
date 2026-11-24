@@ -166,11 +166,20 @@ jobs:
           # skip the remove large-packages step because it takes a while
           large-packages: false
 
+      # A range without internet access (the CherryMountain Brewery's soc-purple)
+      # needs parseus's offline bundle in the image: without it parseus pulls
+      # its container images at every boot and never finishes.
+      - name: stage the parseus offline bundle
+        if: ${{ matrix.build == 'kali-purple' }}
+        run: make kali-purple-bundle
+
       # Build the non-vyos images using phenix
       - name: ${{ matrix.build }} image build
         if: ${{ matrix.build != 'vyos' }}
+        env:
+          PARSEUS_OFFLINE: ${{ matrix.build == 'kali-purple' && '1' || '' }}
         # Use a faster Ubuntu mirror (only applies to Ubuntu-based image builds)
-        run: make ${{ matrix.build }} UBUNTU_MIRROR=--mirror=http://mirrors.edge.kernel.org/ubuntu
+        run: make ${{ matrix.build }} UBUNTU_MIRROR=--mirror=http://mirrors.edge.kernel.org/ubuntu PARSEUS_OFFLINE="$PARSEUS_OFFLINE"
 
       # Build the vyos image using custom build script
       # Using /mnt for more temp space for injecting miniccc
