@@ -167,6 +167,13 @@ the Makefile are shown below.
 > cannot be found on disk, no changes will be made to that overlay/script that
 > cannot be found.
 
+## CherryMountain Brewery Range Images
+
+The `cm-*` targets build the images of the CherryMountain Brewery range from
+stored image configs (method 2 above) in `configs/cherrymountain`. See
+[configs/cherrymountain/README.md](./configs/cherrymountain/README.md) for the
+list and the build notes.
+
 ## Vanilla Linux Images
 
 | **_Target_** | **_OS / Release_**  | **_Includes_** | **_Notes_** | **_GUI?_** |

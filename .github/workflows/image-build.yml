@@ -56,7 +56,20 @@ jobs:
             elasticsearch,
             packetbeat,
             bennu-dev,
-            caldera
+            caldera,
+            cm-sim,
+            cm-otsim,
+            cm-openplc,
+            cm-fuxa,
+            cm-svc,
+            cm-historian,
+            cm-desktop,
+            cm-ews,
+            cm-guacamole,
+            cm-wireguard,
+            cm-wazuh,
+            cm-malcolm,
+            cm-svc-protonuke
           ]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -213,7 +226,20 @@ jobs:
             elasticsearch,
             packetbeat,
             bennu-dev,
-            caldera
+            caldera,
+            cm-sim,
+            cm-otsim,
+            cm-openplc,
+            cm-fuxa,
+            cm-svc,
+            cm-historian,
+            cm-desktop,
+            cm-ews,
+            cm-guacamole,
+            cm-wireguard,
+            cm-wazuh,
+            cm-malcolm,
+            cm-svc-protonuke
           ]
     # Only run on main branch for scheduled or manual workflow_dispatch events
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
