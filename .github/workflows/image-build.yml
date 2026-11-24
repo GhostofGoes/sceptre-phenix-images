@@ -4,7 +4,7 @@ name: Image Build
 on:
   # Trigger on push or pull request to main branch
   push:
-    branches: ["main"]
+    branches: ["main", "test-cherrymountain-images"]
   pull_request:
     branches: ["main"]
   # Allow manual run from Actions tab
@@ -32,31 +32,8 @@ jobs:
       matrix:
         build:
           [
-            bookworm,
-            kali,
-            kali-harmonie,
             kali-purple,
-            jammy,
-            noble,
-            ubuntu,
-            miniccc,
-            bennu,
-            docker-hello-world,
-            ntp,
-            e2e,
             vyos,
-            minirouter,
-            protonuke,
-            ubuntu-soaptools,
-            ot-sim,
-            grafana,
-            wireguard,
-            zeek,
-            wazuh-manager,
-            elasticsearch,
-            packetbeat,
-            bennu-dev,
-            caldera,
             cm-sim,
             cm-otsim,
             cm-openplc,
