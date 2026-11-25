@@ -5,7 +5,7 @@ Brewery range. The range is the `cherrymountain-brewery` topology of
 [sceptre-phenix-topologies](https://github.com/GhostofGoes/sceptre-phenix-topologies/tree/feat-secret-topo/cherrymountain-brewery).
 A topology is the phenix description of machines and networks.
 Each file is a copy of the `phenix-images/<name>.yml` file of the topology at
-commit `299b07c6aa749f3041d6e70c6e5609ef3fa8c0e9`.
+commit `783c21dcb06fee04d024b7839bf945ae7bf6d937`.
 
 The copy in the topology is the source. The lint hooks of the topology test the
 configurations. The
