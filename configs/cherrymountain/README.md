@@ -4,15 +4,30 @@ This directory holds the stored `Image` configurations of the CherryMountain
 Brewery range. The range is the `cherrymountain-brewery` topology of
 [sceptre-phenix-topologies](https://github.com/GhostofGoes/sceptre-phenix-topologies/tree/feat-secret-topo/cherrymountain-brewery).
 A topology is the phenix description of machines and networks.
-Each file is a copy of the `phenix-images/<name>.yml` file of the topology at
-commit `783c21dcb06fee04d024b7839bf945ae7bf6d937`.
+Each `cm-*.yml` file is a copy of the `phenix-images/<name>.yml` file of the
+topology. The file [SOURCE](SOURCE) names the repository, the directory, and
+the commit of the copies.
 
 The copy in the topology is the source. The lint hooks of the topology test the
 configurations. The
 [phenix-images/README.md](https://github.com/GhostofGoes/sceptre-phenix-topologies/blob/feat-secret-topo/cherrymountain-brewery/phenix-images/README.md)
-of the topology says what each image holds and which versions it pins. Do not
-edit a configuration here. Change it in the topology. Then copy it again and
-update the commit above.
+of the topology says what each image holds and which versions it pins.
+
+Do not edit a configuration here. To change one:
+
+1. Change the file in the topology, and push the commit to GitHub.
+2. Run `scripts/cherrymountain-recipes.sh copy <commit>` in this repository,
+   with the full hash of that commit. The script copies the files and writes
+   the commit into `SOURCE`.
+3. If the script reports a new file, add a Makefile target and a workflow
+   entry for it.
+
+The `cherrymountain-recipes` job of the
+[lint workflow](../../.github/workflows/lint.yml) runs
+`scripts/cherrymountain-recipes.sh check`. The job fails when a copy differs
+from the topology at the commit in `SOURCE`. To run the check without a
+network, set `CM_TOPOLOGY_DIR` to a local clone of the topology that has the
+commit.
 
 ## Build
 

@@ -33,3 +33,15 @@ jobs:
         env:
           PREK_SKIP: ${{ (github.ref == 'refs/heads/main') && 'no-commit-to-branch' || '' }}
         run: prek run --all-files --show-diff-on-failure
+
+  cherrymountain-recipes:
+    # The cm-*.yml files in configs/cherrymountain are copies of the topology's
+    # image configs. This job fails when a copy differs from its source.
+    name: cherrymountain recipes match the topology
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compare the copies with the topology
+        run: scripts/cherrymountain-recipes.sh check
