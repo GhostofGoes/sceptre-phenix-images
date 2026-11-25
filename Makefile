@@ -1,4 +1,4 @@
-.PHONY: help check_clean bookworm kali kali-harmonie kali-purple kali-purple-bundle jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana wireguard zeek wazuh-manager elasticsearch packetbeat caldera cm-sim cm-otsim cm-openplc cm-fuxa cm-svc cm-historian cm-desktop cm-ews cm-guacamole cm-wireguard cm-wazuh cm-malcolm cm-svc-protonuke lint install-dev update-actions
+.PHONY: help check_clean bookworm kali kali-harmonie kali-purple kali-purple-bundle jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana wireguard zeek wazuh-manager elasticsearch packetbeat caldera cm-sim cm-otsim cm-openplc cm-fuxa cm-svc cm-historian cm-desktop cm-ews cm-guacamole cm-wireguard cm-wazuh cm-malcolm cm-sensor cm-svc-protonuke lint install-dev update-actions
 
 .ONESHELL: # for heredoc and exit
 # With .ONESHELL a recipe is one shell script, so make only sees its last
@@ -376,6 +376,14 @@ cm-malcolm:
 	@$(CHECK_IMAGE)
 	@$(CHECK_TAR)
 	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-malcolm.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-sensor.qc2		-- CherryMountain: site network sensor (Malcolm in its hedgehog profile)
+cm-sensor:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-sensor.yml)
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
 

@@ -54,6 +54,7 @@ make cm-sim
 | cm-wireguard | 8G | |
 | cm-wazuh | 32G | |
 | cm-malcolm | 64G | The build downloads 7.4 GB of container images |
+| cm-sensor | 32G | The build downloads 2.6 GB of container images. The recipe is `cm-malcolm` with the images of Malcolm's `hedgehog` profile only |
 
 `cm-desktop` and `cm-svc-protonuke` need a static `protonuke` binary at
 `/phenix/protonuke` or next to the Makefile, as the `protonuke` recipe does.

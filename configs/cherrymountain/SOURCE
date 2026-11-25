@@ -3,4 +3,4 @@
 # `scripts/cherrymountain-recipes.sh copy <commit>`, not by hand.
 repo=https://github.com/GhostofGoes/sceptre-phenix-topologies
 path=cherrymountain-brewery/phenix-images
-commit=27e3e0ec24aee48f1818ad800594afae73fd5c58
+commit=58a0374d6b37663926f82a46ec1f5de07a7885eb
