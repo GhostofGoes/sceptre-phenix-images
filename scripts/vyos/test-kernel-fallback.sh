@@ -14,8 +14,8 @@ check() {
     printf '%s\n' "$2" > "$T/defaults.toml"
     vyos_pin_kernel "$T/defaults.toml" "$3" > /dev/null
     local v r
-    v=$(sed -n 's/^kernel_version = "\(.*\)"/\1/p' "$T/defaults.toml")
-    r=$(sed -n 's/^kernel_revision = "\(.*\)"/\1/p' "$T/defaults.toml")
+    v=$(vyos_toml_value kernel_version "$T/defaults.toml")
+    r=$(vyos_toml_value kernel_revision "$T/defaults.toml")
     if [ "$v" = "$4" ] && [ "$r" = "$5" ]; then
         echo "ok   $1"
     else
@@ -43,6 +43,15 @@ kernel_revision = "2"' "$MIRROR" 6.18.62 1
 
 check "old config without kernel_revision: version only" \
     'kernel_version = "6.1.99"' 'Package: linux-image-6.1.100-vyos' 6.1.100 ""
+
+check "a newer mirror kernel with no revision cannot replace a config that has one" \
+    'kernel_version = "6.18.63"
+kernel_revision = "1"' "$MIRROR
+Package: linux-image-6.18.70-vyos" 6.18.62 1
+
+check "unquoted revision, configured kernel in the mirror next to a newer one: unchanged" \
+    'kernel_version = "6.12.40"
+kernel_revision = 1' "$MIRROR" 6.12.40 1
 
 check "no mirror listing (offline): unchanged" \
     'kernel_version = "6.18.63"

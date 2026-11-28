@@ -1,4 +1,4 @@
-.PHONY: help check_clean bookworm kali kali-harmonie kali-purple kali-purple-bundle jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana wireguard zeek wazuh-manager elasticsearch packetbeat caldera lint install-dev update-actions
+.PHONY: help check_clean bookworm kali kali-harmonie kali-purple kali-purple-bundle jammy noble ubuntu miniccc _miniccc_img bennu minirouter _minirouter_img protonuke _protonuke_img docker-hello-world ntp e2e vyos ubuntu-soaptools clean ot-sim grafana wireguard zeek wazuh-manager elasticsearch packetbeat caldera cm-sim cm-otsim cm-openplc cm-fuxa cm-svc cm-historian cm-desktop cm-ews cm-guacamole cm-wireguard cm-wazuh cm-malcolm cm-sensor cm-svc-protonuke lint install-dev update-actions
 
 .ONESHELL: # for heredoc and exit
 # With .ONESHELL a recipe is one shell script, so make only sees its last
@@ -267,6 +267,133 @@ caldera:
 	@$(PHENIX) image create -r noble -v mingui -s 20G -P git,gpg,python3-venv -T $(WORKDIR)/scripts/caldera.sh $(UBUNTU_MIRROR) $(COMPRESS) $(@)
 	@$(PHENIX_IMAGE_BUILD)
 	@$(INJECT_MINICCC)
+
+##
+## ------------------------------- CherryMountain Brewery range image builds -------------------------------
+##
+## Ubuntu Noble images of the CherryMountain Brewery topology (the brew repository), each built from its
+## stored image config in configs/cherrymountain. See configs/cherrymountain/README.md.
+
+# A stored image config (README, method 2) goes into the phenix store as it is, mirror included, so a
+# UBUNTU_MIRROR=--mirror=<url> is written into a copy of the config first.
+MIRROR_URL=$(subst ",,$(patsubst --mirror=%,%,$(UBUNTU_MIRROR)))
+CONFIG_CREATE=config=$(1); if [ -n "$(MIRROR_URL)" ]; then sed 's|^  mirror: .*|  mirror: $(MIRROR_URL)|' $(1) > $(WORKDIR)/$(@).mirror.yml; config=$(WORKDIR)/$(@).mirror.yml; fi; $(PHENIX) config create $$config; rm -f $(WORKDIR)/$(@).mirror.yml
+PROTONUKE=`if [ -f /phenix/protonuke ]; then echo /phenix/protonuke; else echo $(WORKDIR)/protonuke; fi`
+INJECT_PROTONUKE=if test -f $(WORKDIR)/$(@).qc2; then $(PHENIX) image inject-miniexe $(PROTONUKE) $(WORKDIR)/$(@).qc2; echo "----- Injected protonuke into $(@).qc2 -----"; fi
+
+# Build cm-sim.qc2		-- CherryMountain: HELICS broker and plant simulation federates
+cm-sim:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-sim.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-otsim.qc2		-- CherryMountain: ot-sim field devices and BAS controllers
+cm-otsim:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-otsim.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-openplc.qc2		-- CherryMountain: OpenPLC v4 runtime (the PLCs)
+cm-openplc:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-openplc.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-fuxa.qc2		-- CherryMountain: FUXA SCADA server and HMI
+cm-fuxa:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-fuxa.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-svc.qc2		-- CherryMountain: NTP, DNS, syslog relay, BACnet BBMD
+cm-svc:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-svc.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-historian.qc2	-- CherryMountain: InfluxDB 2, Telegraf, Grafana, Mosquitto
+cm-historian:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-historian.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-desktop.qc2		-- CherryMountain: workstation desktop and HMI kiosk, protonuke, GUI
+cm-desktop:
+	@if [ ! -f $(PROTONUKE) ]; then echo "\n\tprotonuke binary not found: '/phenix/protonuke' or '$(WORKDIR)/protonuke' -- build minimega's cmd/protonuke statically and put it there first\n"; exit 1; fi
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-desktop.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+	@$(INJECT_PROTONUKE)
+
+# Build cm-ews.qc2		-- CherryMountain: engineering workstation, OpenPLC Editor, GUI
+cm-ews:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-ews.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-guacamole.qc2	-- CherryMountain: Guacamole jump host
+cm-guacamole:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-guacamole.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-wireguard.qc2	-- CherryMountain: WireGuard gateway, Wazuh agent
+cm-wireguard:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-wireguard.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-wazuh.qc2		-- CherryMountain: Wazuh manager, indexer, and dashboard
+cm-wazuh:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-wazuh.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-malcolm.qc2		-- CherryMountain: Malcolm network sensor
+cm-malcolm:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-malcolm.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-sensor.qc2		-- CherryMountain: site network sensor (Malcolm in its hedgehog profile)
+cm-sensor:
+	@$(CHECK_IMAGE)
+	@$(CHECK_TAR)
+	@$(call CONFIG_CREATE,$(WORKDIR)/configs/cherrymountain/cm-sensor.yml)
+	@$(PHENIX_IMAGE_BUILD)
+	@$(INJECT_MINICCC)
+
+# Build cm-svc-protonuke.qc2	-- CherryMountain: cm-svc with protonuke (the internet traffic node); builds cm-svc.qc2 when it is missing
+cm-svc-protonuke:
+	@if [ ! -f $(PROTONUKE) ]; then echo "\n\tprotonuke binary not found: '/phenix/protonuke' or '$(WORKDIR)/protonuke' -- build minimega's cmd/protonuke statically and put it there first\n"; exit 1; fi
+	@# The copy is built from $(WORKDIR)/configs/cherrymountain/cm-svc.yml, which makes that config an input of this recipe.
+	@if [ ! -f $(WORKDIR)/cm-svc.qc2 ]; then $(MAKE) --no-print-directory cm-svc UBUNTU_MIRROR='$(UBUNTU_MIRROR)' WORKDIR='$(WORKDIR)'; fi
+	@cp $(WORKDIR)/cm-svc.qc2 $(WORKDIR)/$(@).qc2
+	@$(INJECT_PROTONUKE)
 
 ##
 ## ------------------------------------------ Administration ------------------------------------------

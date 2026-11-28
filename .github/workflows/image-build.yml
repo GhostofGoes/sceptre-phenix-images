@@ -56,7 +56,21 @@ jobs:
             elasticsearch,
             packetbeat,
             bennu-dev,
-            caldera
+            caldera,
+            cm-sim,
+            cm-otsim,
+            cm-openplc,
+            cm-fuxa,
+            cm-svc,
+            cm-historian,
+            cm-desktop,
+            cm-ews,
+            cm-guacamole,
+            cm-wireguard,
+            cm-wazuh,
+            cm-malcolm,
+            cm-sensor,
+            cm-svc-protonuke
           ]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -153,11 +167,20 @@ jobs:
           # skip the remove large-packages step because it takes a while
           large-packages: false
 
+      # A range without internet access (the CherryMountain Brewery's soc-purple)
+      # needs parseus's offline bundle in the image: without it parseus pulls
+      # its container images at every boot and never finishes.
+      - name: stage the parseus offline bundle
+        if: ${{ matrix.build == 'kali-purple' }}
+        run: make kali-purple-bundle
+
       # Build the non-vyos images using phenix
       - name: ${{ matrix.build }} image build
         if: ${{ matrix.build != 'vyos' }}
+        env:
+          PARSEUS_OFFLINE: ${{ matrix.build == 'kali-purple' && '1' || '' }}
         # Use a faster Ubuntu mirror (only applies to Ubuntu-based image builds)
-        run: make ${{ matrix.build }} UBUNTU_MIRROR=--mirror=http://mirrors.edge.kernel.org/ubuntu
+        run: make ${{ matrix.build }} UBUNTU_MIRROR=--mirror=http://mirrors.edge.kernel.org/ubuntu PARSEUS_OFFLINE="$PARSEUS_OFFLINE"
 
       # Build the vyos image using custom build script
       # Using /mnt for more temp space for injecting miniccc
@@ -213,7 +236,21 @@ jobs:
             elasticsearch,
             packetbeat,
             bennu-dev,
-            caldera
+            caldera,
+            cm-sim,
+            cm-otsim,
+            cm-openplc,
+            cm-fuxa,
+            cm-svc,
+            cm-historian,
+            cm-desktop,
+            cm-ews,
+            cm-guacamole,
+            cm-wireguard,
+            cm-wazuh,
+            cm-malcolm,
+            cm-sensor,
+            cm-svc-protonuke
           ]
     # Only run on main branch for scheduled or manual workflow_dispatch events
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')

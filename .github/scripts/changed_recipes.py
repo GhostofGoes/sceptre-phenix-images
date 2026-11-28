@@ -10,7 +10,7 @@ Usage:
 A recipe is affected when it is new, or when anything its image is built from
 differs: its Makefile target block (and its helper target's), the Makefile's
 shared variables and macros (comments, blank lines and the .PHONY list
-excluded), or the git blobs of the overlays and scripts the target references.
+excluded), or the git blobs of the configs, overlays and scripts the target references.
 """
 
 import re
@@ -32,11 +32,11 @@ NOT_RECIPES = {
 }
 
 TARGET = re.compile(r"^([A-Za-z0-9_-]+):(?!=)(.*)$")
-PATHS = re.compile(r"\$\(WORKDIR\)/((?:overlays|scripts)/[^\s,;)]*)")
+PATHS = re.compile(r"\$\(WORKDIR\)/((?:configs|overlays|scripts)/[^\s,;)]*)")
 
 
 def recipes(makefile: str) -> dict[str, set[str]]:
-    """Map each image target to the overlay and script paths it references."""
+    """Map each image target to the config, overlay and script paths it references."""
     result: dict[str, set[str]] = {}
     aliases: dict[str, str] = {}
     current = None
@@ -73,7 +73,7 @@ def recipes(makefile: str) -> dict[str, set[str]]:
 def recipe_inputs(makefile: str, recipe: str, cwd: str | None = None) -> str:
     """The text a recipe's image depends on: the Makefile's shared variables and
     macros, the recipe's own target block (and its helper's), and the git blob
-    ids of the overlays and scripts it references."""
+    ids of the configs, overlays and scripts it references."""
     lines = makefile.splitlines()
     header = []
 
