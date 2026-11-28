@@ -1,8 +1,8 @@
 # CherryMountain Brewery range images
 
 This directory holds the stored `Image` configurations of the CherryMountain
-Brewery range. The range is the `cherrymountain-brewery` topology of
-[sceptre-phenix-topologies](https://github.com/GhostofGoes/sceptre-phenix-topologies/tree/feat-secret-topo/cherrymountain-brewery).
+Brewery range. The range is the topology in the
+[brew](https://github.com/GhostofGoes/brew) repository.
 A topology is the phenix description of machines and networks.
 Each `cm-*.yml` file is a copy of the `phenix-images/<name>.yml` file of the
 topology. The file [SOURCE](SOURCE) names the repository, the directory, and
@@ -10,7 +10,7 @@ the commit of the copies.
 
 The copy in the topology is the source. The lint hooks of the topology test the
 configurations. The
-[phenix-images/README.md](https://github.com/GhostofGoes/sceptre-phenix-topologies/blob/feat-secret-topo/cherrymountain-brewery/phenix-images/README.md)
+[phenix-images/README.md](https://github.com/GhostofGoes/brew/blob/main/phenix-images/README.md)
 of the topology says what each image holds and which versions it pins.
 
 Do not edit a configuration here. To change one:

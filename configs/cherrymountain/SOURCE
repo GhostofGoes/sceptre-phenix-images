@@ -1,6 +1,6 @@
 # The source of the cm-*.yml files in this directory.
 # scripts/cherrymountain-recipes.sh reads this file. Change `commit` with
 # `scripts/cherrymountain-recipes.sh copy <commit>`, not by hand.
-repo=https://github.com/GhostofGoes/sceptre-phenix-topologies
-path=cherrymountain-brewery/phenix-images
-commit=58a0374d6b37663926f82a46ec1f5de07a7885eb
+repo=https://github.com/GhostofGoes/brew
+path=phenix-images
+commit=3f6ab0bca492e81310a1e816c2d31b4fb702177e

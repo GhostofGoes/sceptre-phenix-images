@@ -8,7 +8,7 @@
 #   phenix image build -o <dir> -c -x cm-wireguard
 #   phenix image inject-miniexe /usr/local/bin/miniccc <dir>/cm-wireguard.qc2
 # inject-miniexe adds miniccc, which SoH, cc, and SCORCH need (DESIGN.md 15.7).
-# The wind plant's focal image (renewables/wind/plant/phenix-images/wireguard.yml)
+# The wind plant's focal image (sceptre-phenix-topologies, renewables/wind/plant/phenix-images/wireguard.yml)
 # is the model; this one is rebased on noble.
 
 apiVersion: phenix.sandia.gov/v1

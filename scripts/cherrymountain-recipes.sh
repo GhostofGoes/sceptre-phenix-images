@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The cm-*.yml files in configs/cherrymountain are copies. Their source is the
-# cherrymountain-brewery topology of sceptre-phenix-topologies, at the commit
-# that configs/cherrymountain/SOURCE names.
+# CherryMountain Brewery topology (the brew repository), at the commit that
+# configs/cherrymountain/SOURCE names.
 #
 #   scripts/cherrymountain-recipes.sh check          fail if a copy differs from its source
 #   scripts/cherrymountain-recipes.sh copy COMMIT    copy the files of COMMIT and record COMMIT

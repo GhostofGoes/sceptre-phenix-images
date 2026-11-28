@@ -68,14 +68,14 @@ spec:
       export DEBIAN_FRONTEND=noninteractive
       # CM_REF names the commit of this repository whose sim/ and viz/ are installed,
       # and CM_SIM_TREE and CM_VIZ_TREE are the git tree ids of the two packages at that
-      # commit (`git rev-parse CM_REF:cherrymountain-brewery/sim/cherrymountain_sim`,
+      # commit (`git rev-parse CM_REF:sim/cherrymountain_sim`,
       # and viz/cherrymountain_viz). A change to either package needs a second commit
       # that moves all three, and a test fails until it exists
       # (tests/soc/test_image_python.py): the app renders helics.json from the working
       # tree, and federates of an older sim/ stop at their first step on names they do
       # not know (cellar and packaging did, with the commit before this). Move CM_REF
       # after a change to a pyproject.toml too; the READMEs and tests need no move.
-      CM_REF=1103a3845272b688e981526e67b393bc77819b66
+      CM_REF=e72d2f5ceda8caf64700cfc744aca5da0fcb7602
       CM_SIM_TREE=dfbc75f8961144ab27a8fba43ee8197f22359e5d
       CM_VIZ_TREE=73ff5b5f28906d27d4cfaf7a04b9385158b8c4aa
       HELICS_VERSION=3.6.1
@@ -111,12 +111,12 @@ spec:
       python3 -m venv /opt/cherrymountain/venv
       /opt/cherrymountain/venv/bin/pip install --no-cache-dir "helics==$HELICS_VERSION"
       /opt/cherrymountain/venv/bin/pip install --no-cache-dir \
-        "cherrymountain-sim[power] @ https://github.com/GhostofGoes/sceptre-phenix-topologies/archive/$CM_REF.tar.gz#subdirectory=cherrymountain-brewery/sim"
+        "cherrymountain-sim[power] @ https://github.com/GhostofGoes/brew/archive/$CM_REF.tar.gz#subdirectory=sim"
       # cm-viz from the same archive: the bridge and the page with three.js
       # vendored in the package (web/vendor/three, MIT), so nothing is fetched
       # at run time. The app injects its unit on sim-ctl only.
       /opt/cherrymountain/venv/bin/pip install --no-cache-dir "websockets==$WEBSOCKETS_VERSION" \
-        "cherrymountain-viz @ https://github.com/GhostofGoes/sceptre-phenix-topologies/archive/$CM_REF.tar.gz#subdirectory=cherrymountain-brewery/viz"
+        "cherrymountain-viz @ https://github.com/GhostofGoes/brew/archive/$CM_REF.tar.gz#subdirectory=viz"
       for exe in helics_broker helics_app helics_player helics_recorder; do
         ln -sf "/opt/cherrymountain/venv/bin/$exe" "/usr/local/bin/$exe"
       done

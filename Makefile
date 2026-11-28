@@ -271,7 +271,7 @@ caldera:
 ##
 ## ------------------------------- CherryMountain Brewery range image builds -------------------------------
 ##
-## Ubuntu Noble images of the cherrymountain-brewery topology (sceptre-phenix-topologies), each built from its
+## Ubuntu Noble images of the CherryMountain Brewery topology (the brew repository), each built from its
 ## stored image config in configs/cherrymountain. See configs/cherrymountain/README.md.
 
 # A stored image config (README, method 2) goes into the phenix store as it is, mirror included, so a
